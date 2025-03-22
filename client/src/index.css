@@ -1,0 +1,191 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+@import "tailwindcss";
+
+* {
+  font-family: Outfit, sans-serif;
+}
+
+:root {
+  --font-course-details-heading-small: 22px;
+  --line-height-course-details-heading-small: 30px;
+
+  --font-course-details-heading-large: 30px;
+  --line-height-course-details-heading-large: 38px;
+
+  --font-home-heading-small: 28px;
+  --line-height-home-heading-small: 34px;
+
+  --font-home-heading-large: 40px;
+  --line-height-home-heading-large: 48px;
+
+  --font-default: 20px;
+  --line-height-default: 20px;
+
+  --section-height: 500px;
+
+  --max-w-course-card: 424px;
+  --shadow-custom-card: 0px 4px 15px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Larger screens (tablets and desktops) */
+@media (min-width: 768px) {
+  :root {
+    --font-course-details-heading-small: 26px;
+    --line-height-course-details-heading-small: 36px;
+
+    --font-course-details-heading-large: 36px;
+    --line-height-course-details-heading-large: 44px;
+
+    --font-home-heading-small: 48px;
+    --line-height-home-heading-small: 56px;
+
+    --font-home-heading-large: 48px;
+    --line-height-home-heading-large: 56px;
+
+    --font-default: 15px;
+    --line-height-default: 21px;
+  }
+}
+
+/* Even larger screens (large desktops) */
+@media (min-width: 1024px) {
+  :root {
+    --font-course-details-heading-small: 36px;
+    --line-height-course-details-heading-small: 36px;
+
+    --font-course-details-heading-large: 36px;
+    --line-height-course-details-heading-large: 44px;
+
+    --font-home-heading-small: 48px;
+    --line-height-home-heading-small: 56px;
+
+    --font-home-heading-large: 48px;
+    --line-height-home-heading-large: 56px;
+
+    --font-default: 18px;
+    --line-height-default: 24px;
+  }
+}
+
+/* Applying classes */
+.course-details-heading-small {
+  font-size: var(--font-course-details-heading-small);
+  line-height: var(--line-height-course-details-heading-small);
+}
+
+.course-details-heading-large {
+  font-size: var(--font-course-details-heading-large);
+  line-height: var(--line-height-course-details-heading-large);
+}
+
+.home-heading-small {
+  font-size: var(--font-home-heading-small);
+  line-height: var(--line-height-home-heading-small);
+}
+
+.home-heading-large {
+  font-size: var(--font-home-heading-large);
+  line-height: var(--line-height-home-heading-large);
+}
+
+.default-text {
+  font-size: var(--font-default);
+  line-height: var(--line-height-default);
+}
+
+:root {
+  --grid-auto-cols: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.grid-auto-cols {
+  display: grid;
+  grid-template-columns: var(--grid-auto-cols);
+  gap: 1rem; /* Adjust as needed */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.rich-text {
+  font-size: 15px;
+  color: #7a7b7d;
+}
+
+.rich-text p {
+  margin-bottom: 16px;
+}
+
+.rich-text h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #252525;
+  margin: 32px 0;
+}
+
+.rich-text h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #252525;
+  margin: 24px 0;
+}
+
+.rich-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333333;
+  margin: 20px 0;
+}
+
+.rich-text h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #444444;
+  margin: 16px 0;
+}
+
+.rich-text h5 {
+  font-size: 14px;
+  font-weight: 400;
+  color: #555555;
+  margin: 12px 0;
+}
+
+.rich-text h6 {
+  font-size: 12px;
+  font-weight: 400;
+  color: #666666;
+  margin: 8px 0;
+}
+
+.rich-text strong {
+  font-weight: 700;
+}
+
+.rich-text ol {
+  margin-left: 30px;
+  list-style-type: decimal;
+}
+
+.rich-text ul {
+  margin-left: 30px;
+  list-style-type: disc;
+}
+
+.rich-text li {
+  margin-bottom: 8px;
+}
+
+.max-w-course-card {
+  max-width: var(--max-w-course-card);
+}
+
+.shadow-custom-card {
+  box-shadow: var(--shadow-custom-card);
+}
