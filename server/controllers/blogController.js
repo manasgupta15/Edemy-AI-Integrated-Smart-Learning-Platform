@@ -127,33 +127,97 @@ export const getBlogById = async (req, res) => {
 /**
  * Like/Unlike a blog post
  */
+// export const likeBlog = async (req, res) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ success: false, message: "Unauthorized" });
+//     }
+
+//     const userId = req.user.id; // Clerk User ID
+//     const blog = await Blog.findById(req.params.id);
+//     if (!blog) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Blog not found" });
+//     }
+
+//     const index = blog.likes.indexOf(userId);
+
+//     if (index === -1) {
+//       blog.likes.push(userId); // Add user ID to likes array
+//     } else {
+//       blog.likes.splice(index, 1); // Remove user ID from likes array
+//     }
+
+//     await blog.save();
+//     res.json({ success: true, likes: blog.likes }); // Return updated likes array
+//   } catch (error) {
+//     console.error("❌ Error updating like status:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const likeBlog = async (req, res) => {
   try {
+    console.log("Like request received:", {
+      params: req.params,
+      user: req.user,
+    });
+
     if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      console.error("Unauthorized - No user in request");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized - Please log in",
+      });
     }
 
-    const userId = req.user.id; // Clerk User ID
-    const blog = await Blog.findById(req.params.id);
+    const userId = req.user.id;
+    const blogId = req.params.id;
+
+    console.log(`User ${userId} attempting to like blog ${blogId}`);
+
+    const blog = await Blog.findById(blogId);
     if (!blog) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Blog not found" });
+      console.error("Blog not found");
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
     }
 
-    const index = blog.likes.indexOf(userId);
+    // Check if user already liked the blog
+    const isLiked = blog.likes.includes(userId);
 
-    if (index === -1) {
-      blog.likes.push(userId); // Add user ID to likes array
+    // Update likes array
+    if (isLiked) {
+      blog.likes.pull(userId); // Remove like
+      console.log("Like removed");
     } else {
-      blog.likes.splice(index, 1); // Remove user ID from likes array
+      blog.likes.push(userId); // Add like
+      console.log("Like added");
     }
 
     await blog.save();
-    res.json({ success: true, likes: blog.likes }); // Return updated likes array
+
+    console.log(`Blog ${blogId} now has ${blog.likes.length} likes`);
+
+    res.json({
+      success: true,
+      likes: blog.likes,
+      isLiked: !isLiked,
+    });
   } catch (error) {
-    console.error("❌ Error updating like status:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error in likeBlog controller:", {
+      message: error.message,
+      stack: error.stack,
+    });
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
