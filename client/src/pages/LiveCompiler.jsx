@@ -192,19 +192,19 @@
 import { useState, useEffect, useContext } from "react";
 import AceEditor from "react-ace";
 import axios from "axios";
+import { AppContext } from "../context/AppContext";
 
-// Import Ace Editor language modes
+// Import Ace Editor language modes and themes
 import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/mode-c_cpp";
 import "ace-builds/src-noconflict/mode-javascript";
-
-// Import themes
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/theme-xcode";
-import { AppContext } from "../context/AppContext";
 
+// Pre-written code snippets for each language
 const codeSnippets = {
+  // Fixed typo from codeSnippets
   c: `#include <stdio.h>
 
 int main() {
@@ -221,10 +221,11 @@ int main() {
   javascript: `console.log("Hello, World!");`,
 };
 
+// Language options - simplified since we're using the same codes for Piston
 const languages = [
   { value: "c", label: "C" },
   { value: "cpp", label: "C++" },
-  { value: "python", label: "Python" },
+  { value: "python", label: "Python 3" },
   { value: "javascript", label: "JavaScript" },
 ];
 
@@ -236,27 +237,41 @@ const LiveCompiler = () => {
   const [fontSize, setFontSize] = useState(14);
   const [theme, setTheme] = useState("monokai");
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Update code snippet when language changes
   useEffect(() => {
     setCode(codeSnippets[language]);
   }, [language]);
 
+  // Handle Code Execution
   const runCode = async () => {
+    setIsLoading(true);
+    setOutput("Running code...");
+
     try {
       const response = await axios.post(`${backendUrl}/api/execute`, {
-        language,
+        language, // Now using the same language codes as Piston API
         code,
       });
-      setOutput(
-        response.data.success ? response.data.output : response.data.error
-      );
+
+      // Updated response handling
+      setOutput(response.data.output || "No output");
     } catch (error) {
-      setOutput("Error executing code.");
+      console.error("Execution error:", error);
+      setOutput(error.response?.data?.error || "Error executing code");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Toggle between night and day themes
   const toggleTheme = () => {
-    setTheme(isDarkMode ? "github" : "monokai");
+    if (isDarkMode) {
+      setTheme("github");
+    } else {
+      setTheme("monokai");
+    }
     setIsDarkMode(!isDarkMode);
   };
 
@@ -268,6 +283,7 @@ const LiveCompiler = () => {
     >
       <h2 className="text-2xl font-bold mb-4">Live Coding Compiler</h2>
 
+      {/* Language Selector */}
       <div className="mb-4">
         <select
           className={`p-2 rounded ${
@@ -284,6 +300,37 @@ const LiveCompiler = () => {
         </select>
       </div>
 
+      {/* Font Size Controls */}
+      <div className="flex gap-2 mb-4">
+        <button
+          className={`p-2 ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-200"
+          } rounded`}
+          onClick={() => setFontSize(fontSize + 1)}
+        >
+          A+
+        </button>
+        <button
+          className={`p-2 ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-200"
+          } rounded`}
+          onClick={() => setFontSize(fontSize - 1)}
+        >
+          A-
+        </button>
+      </div>
+
+      {/* Theme Toggle */}
+      <button
+        className={`p-2 mb-4 ${
+          isDarkMode ? "bg-gray-700" : "bg-gray-200"
+        } rounded`}
+        onClick={toggleTheme}
+      >
+        {isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
+      </button>
+
+      {/* Ace Code Editor */}
       <AceEditor
         mode={
           language === "javascript"
@@ -308,15 +355,44 @@ const LiveCompiler = () => {
         }}
       />
 
+      {/* Run Button */}
       <button
         className={`mt-4 p-2 ${
           isDarkMode ? "bg-blue-600" : "bg-blue-500"
-        } text-white rounded hover:bg-blue-700 transition duration-300`}
+        } text-white rounded hover:bg-blue-700 transition duration-300 flex items-center gap-2`}
         onClick={runCode}
+        disabled={isLoading}
       >
-        Run Code
+        {isLoading ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Running...
+          </>
+        ) : (
+          "Run Code"
+        )}
       </button>
 
+      {/* Output Section */}
       <div
         className={`mt-4 p-4 ${
           isDarkMode ? "bg-gray-800" : "bg-gray-100"

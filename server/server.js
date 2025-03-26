@@ -17,8 +17,9 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import blogRoutes from "./routes/blogRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import axios from "axios";
 
-// ✅ Import Routes
+// Import Routes
 import quizRoutes from "./routes/quizRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
@@ -39,34 +40,33 @@ const io = new Server(server, {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Connect to Database & Cloudinary
+// Connect to Database & Cloudinary
 await connectDB();
 await connectCloudinary();
 
-// ✅ Middlewares
-// app.use(cors());
+// Middlewares
 app.use(
   cors({
-    origin: process.env.CLIENT_URL, // ✅ Allow frontend URL
-    credentials: true, // ✅ Allow authentication cookies
+    origin: process.env.CLIENT_URL,
+    credentials: true,
   })
 );
 app.use(clerkMiddleware());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Static Files
+// Static Files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/certificates", express.static(path.join(__dirname, "certificates")));
 
-// ✅ Routes
+// Routes
 app.get("/", (req, res) => res.send("API working 🚀"));
 
 // Clerk & Stripe Webhooks
 app.post("/clerk", express.json(), clerkWebhooks);
 app.use("/api/payment", paymentRoutes);
 
-// ✅ API Routes
+// API Routes
 app.use("/api/educator", educatorRouter);
 app.use("/api/course", courseRouter);
 app.use("/api/user", userRouter);
@@ -78,7 +78,7 @@ app.use("/api/queries", queryRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api", commentRoutes);
 
-// ✅ WebSockets for Real-Time Code Collaboration
+// WebSockets for Real-Time Code Collaboration
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -96,91 +96,62 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Live Code Execution API Without Docker
-//! const tempDir = path.join(__dirname, "temp");
-//! if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+// ========== CODE EXECUTION SETUP ==========
 
-// const tempDir =
-//   process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
-// if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
-//   fs.mkdirSync(tempDir);
-// }
-
-// const languages = {
-//   c: { ext: "c", compile: "gcc", run: "temp" },
-//   cpp: { ext: "cpp", compile: "g++", run: "temp" },
-//   python: { ext: "py", run: "python3" },
-//   javascript: { ext: "js", run: "node" },
-// };
-
-// const executeCode = (language, code) => {
-//   return new Promise((resolve, reject) => {
-//     const langConfig = languages[language];
-//     if (!langConfig) return reject(new Error("Unsupported language"));
-
-//     const filePath = path.join(tempDir, `temp.${langConfig.ext}`);
-//     fs.writeFileSync(filePath, code);
-
-//     const executablePath = path.join(tempDir, langConfig.run);
-
-//     let command = langConfig.compile
-//       ? `${langConfig.compile} ${filePath} -o ${executablePath}`
-//       : `${langConfig.run} ${filePath}`;
-
-//     exec(command, (error, stdout, stderr) => {
-//       if (error) {
-//         console.error("Compilation Error:", stderr || error.message);
-//         return reject(new Error(stderr || error.message));
-//       }
-
-//       // If compilation is successful, run the executable
-//       if (langConfig.compile) {
-//         const runCommand =
-//           os.platform() === "win32" ? `${executablePath}.exe` : executablePath;
-//         exec(runCommand, (runError, runStdout, runStderr) => {
-//           if (runError) {
-//             console.error("Execution Error:", runStderr || runError.message);
-//             return reject(new Error(runStderr || runError.message));
-//           }
-//           resolve(runStdout);
-//         });
-//       } else {
-//         resolve(stdout);
-//       }
-//     });
-//   });
-// };
-
-// app.post("/api/execute", async (req, res) => {
-//   const { language, code } = req.body;
-//   try {
-//     const output = await executeCode(language, code);
-//     res.json({ success: true, output });
-//   } catch (err) {
-//     res.json({ success: false, error: err.message });
-//   }
-// });
-
+// Temp directory setup for local execution
 const tempDir =
   process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
 
-// ✅ Only create temp directory locally
 if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
   fs.mkdirSync(tempDir);
 }
 
-// ✅ Use correct Python command
-const pythonCommand =
-  process.env.NODE_ENV === "production" ? "python" : "python3";
-
+// Language configurations
 const languages = {
   c: { ext: "c", compile: "gcc", run: "temp" },
   cpp: { ext: "cpp", compile: "g++", run: "temp" },
-  python: { ext: "py", run: pythonCommand },
+  python: { ext: "py", run: "python3" },
   javascript: { ext: "js", run: "node" },
 };
 
-const executeCode = (language, code) => {
+// Language mapping for Piston API
+const pistonLanguages = {
+  c: "c",
+  cpp: "cpp",
+  python: "python3",
+  javascript: "javascript",
+};
+
+// Cloud-based execution using Piston API
+const executeCodeCloud = async (language, code) => {
+  try {
+    const pistonLang = pistonLanguages[language];
+    if (!pistonLang)
+      throw new Error("Unsupported language for cloud execution");
+
+    const response = await axios.post(
+      "https://emkc.org/api/v2/piston/execute",
+      {
+        language: pistonLang,
+        source: code,
+      }
+    );
+
+    const result = response.data;
+
+    if (result.run) {
+      return result.run.output || result.run.stderr || "No output";
+    } else {
+      throw new Error("Execution failed");
+    }
+  } catch (error) {
+    console.error("Piston API error:", error);
+    throw new Error(error.response?.data?.message || "Failed to execute code");
+  }
+};
+
+// Local execution (for development)
+const executeCodeLocal = (language, code) => {
   return new Promise((resolve, reject) => {
     const langConfig = languages[language];
     if (!langConfig) return reject(new Error("Unsupported language"));
@@ -217,17 +188,27 @@ const executeCode = (language, code) => {
   });
 };
 
+// Unified execution endpoint
 app.post("/api/execute", async (req, res) => {
   const { language, code } = req.body;
+
   try {
-    const output = await executeCode(language, code);
+    let output;
+
+    // Use cloud execution in production, local in development
+    if (process.env.NODE_ENV === "production") {
+      output = await executeCodeCloud(language, code);
+    } else {
+      output = await executeCodeLocal(language, code);
+    }
+
     res.json({ success: true, output });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }
 });
 
-// ✅ Start Server
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
