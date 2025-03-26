@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { useUser, useAuth } from "@clerk/clerk-react"; // Clerk authentication
+import { useUser } from "@clerk/clerk-react"; // Clerk authentication
 import { AppContext } from "../../../context/AppContext";
 
 const BlogDetails = () => {
@@ -14,7 +14,6 @@ const BlogDetails = () => {
   const [newComment, setNewComment] = useState(""); // State for new comment input
   const [editingCommentId, setEditingCommentId] = useState(null); // State for editing comment
   const [editedCommentContent, setEditedCommentContent] = useState(""); // State for edited comment
-  const { getToken } = useAuth(); // Add this line
   const { user } = useUser(); // Get current user from Clerk
 
   // Fetch blog and comments
@@ -40,25 +39,6 @@ const BlogDetails = () => {
   }, [id]);
 
   // Add a new comment
-  // const handleAddComment = async () => {
-  //   if (!user) {
-  //     alert("You must be logged in to add a comment.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const res = await axios.post(
-  //       `${backendUrl}/api/blogs/${id}/comments`,
-  //       { content: newComment },
-  //       { withCredentials: true }
-  //     );
-
-  //     setComments([...comments, res.data.comment]); // Add new comment to the list
-  //     setNewComment(""); // Clear the input field
-  //   } catch (error) {
-  //     console.error("Error adding comment:", error);
-  //   }
-  // };
   const handleAddComment = async () => {
     if (!user) {
       alert("You must be logged in to add a comment.");
@@ -66,55 +46,26 @@ const BlogDetails = () => {
     }
 
     try {
-      const token = await getToken(); // Get Clerk token
       const res = await axios.post(
         `${backendUrl}/api/blogs/${id}/comments`,
         { content: newComment },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Send token in header
-          },
-        }
+        { withCredentials: true }
       );
 
-      setComments([...comments, res.data.comment]);
-      setNewComment("");
+      setComments([...comments, res.data.comment]); // Add new comment to the list
+      setNewComment(""); // Clear the input field
     } catch (error) {
       console.error("Error adding comment:", error);
     }
   };
 
   // Edit a comment
-  // const handleEditComment = async (commentId) => {
-  //   try {
-  //     const res = await axios.put(
-  //       `${backendUrl}/api/comments/${commentId}`,
-  //       { content: editedCommentContent },
-  //       { withCredentials: true }
-  //     );
-
-  //     setComments(
-  //       comments.map((comment) =>
-  //         comment._id === commentId ? res.data.comment : comment
-  //       )
-  //     );
-  //     setEditingCommentId(null); // Exit edit mode
-  //   } catch (error) {
-  //     console.error("Error editing comment:", error);
-  //   }
-  // };
-
   const handleEditComment = async (commentId) => {
     try {
-      const token = await getToken(); // Get Clerk token
       const res = await axios.put(
         `${backendUrl}/api/comments/${commentId}`,
         { content: editedCommentContent },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Add authorization header
-          },
-        }
+        { withCredentials: true }
       );
 
       setComments(
@@ -122,35 +73,20 @@ const BlogDetails = () => {
           comment._id === commentId ? res.data.comment : comment
         )
       );
-      setEditingCommentId(null);
+      setEditingCommentId(null); // Exit edit mode
     } catch (error) {
       console.error("Error editing comment:", error);
     }
   };
 
   // Delete a comment
-  // const handleDeleteComment = async (commentId) => {
-  //   try {
-  //     await axios.delete(`${backendUrl}/api/comments/${commentId}`, {
-  //       withCredentials: true,
-  //     });
-
-  //     setComments(comments.filter((comment) => comment._id !== commentId)); // Remove deleted comment
-  //   } catch (error) {
-  //     console.error("Error deleting comment:", error);
-  //   }
-  // };
-
   const handleDeleteComment = async (commentId) => {
     try {
-      const token = await getToken(); // Get Clerk token
       await axios.delete(`${backendUrl}/api/comments/${commentId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Add authorization header
-        },
+        withCredentials: true,
       });
 
-      setComments(comments.filter((comment) => comment._id !== commentId));
+      setComments(comments.filter((comment) => comment._id !== commentId)); // Remove deleted comment
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
