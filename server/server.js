@@ -100,16 +100,83 @@ io.on("connection", (socket) => {
 //! const tempDir = path.join(__dirname, "temp");
 //! if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
+// const tempDir =
+//   process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
+// if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
+//   fs.mkdirSync(tempDir);
+// }
+
+// const languages = {
+//   c: { ext: "c", compile: "gcc", run: "temp" },
+//   cpp: { ext: "cpp", compile: "g++", run: "temp" },
+//   python: { ext: "py", run: "python3" },
+//   javascript: { ext: "js", run: "node" },
+// };
+
+// const executeCode = (language, code) => {
+//   return new Promise((resolve, reject) => {
+//     const langConfig = languages[language];
+//     if (!langConfig) return reject(new Error("Unsupported language"));
+
+//     const filePath = path.join(tempDir, `temp.${langConfig.ext}`);
+//     fs.writeFileSync(filePath, code);
+
+//     const executablePath = path.join(tempDir, langConfig.run);
+
+//     let command = langConfig.compile
+//       ? `${langConfig.compile} ${filePath} -o ${executablePath}`
+//       : `${langConfig.run} ${filePath}`;
+
+//     exec(command, (error, stdout, stderr) => {
+//       if (error) {
+//         console.error("Compilation Error:", stderr || error.message);
+//         return reject(new Error(stderr || error.message));
+//       }
+
+//       // If compilation is successful, run the executable
+//       if (langConfig.compile) {
+//         const runCommand =
+//           os.platform() === "win32" ? `${executablePath}.exe` : executablePath;
+//         exec(runCommand, (runError, runStdout, runStderr) => {
+//           if (runError) {
+//             console.error("Execution Error:", runStderr || runError.message);
+//             return reject(new Error(runStderr || runError.message));
+//           }
+//           resolve(runStdout);
+//         });
+//       } else {
+//         resolve(stdout);
+//       }
+//     });
+//   });
+// };
+
+// app.post("/api/execute", async (req, res) => {
+//   const { language, code } = req.body;
+//   try {
+//     const output = await executeCode(language, code);
+//     res.json({ success: true, output });
+//   } catch (err) {
+//     res.json({ success: false, error: err.message });
+//   }
+// });
+
 const tempDir =
   process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
+
+// ✅ Only create temp directory locally (Vercel already has /tmp)
 if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
   fs.mkdirSync(tempDir);
 }
 
+// ✅ Dynamically determine Python version based on environment
+const pythonCommand =
+  process.env.NODE_ENV === "production" ? "python" : "python3";
+
 const languages = {
   c: { ext: "c", compile: "gcc", run: "temp" },
   cpp: { ext: "cpp", compile: "g++", run: "temp" },
-  python: { ext: "py", run: "python3" },
+  python: { ext: "py", run: pythonCommand },
   javascript: { ext: "js", run: "node" },
 };
 
@@ -133,7 +200,7 @@ const executeCode = (language, code) => {
         return reject(new Error(stderr || error.message));
       }
 
-      // If compilation is successful, run the executable
+      // ✅ Run compiled C/C++ executable correctly across different OS
       if (langConfig.compile) {
         const runCommand =
           os.platform() === "win32" ? `${executablePath}.exe` : executablePath;
