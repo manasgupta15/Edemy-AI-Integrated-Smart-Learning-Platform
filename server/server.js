@@ -52,19 +52,15 @@ await connectCloudinary();
 //   })
 // );
 
-// Replace your current CORS setup with:
 const allowedOrigins = [
-  "http://localhost:5173", // Local development
-  "https://edemy-ai-integrated-smart-learning-platform.vercel.app", // Production
+  "http://localhost:5173",
+  "https://edemy-ai-integrated-smart-learning-platform.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));

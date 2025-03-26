@@ -46,14 +46,15 @@ import { clerkClient } from "@clerk/express";
 
 export const extractUser = async (req, res, next) => {
   try {
-    // Try to get from Authorization header first (for production)
+    // First try to get from Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader) {
       const token = authHeader.split(" ")[1];
       if (token) {
-        const decoded = await clerkClient.verifyToken(token);
-        if (decoded) {
+        try {
+          const decoded = await clerkClient.verifyToken(token);
           const user = await clerkClient.users.getUser(decoded.sub);
+
           req.user = {
             id: decoded.sub,
             email: user.emailAddresses?.[0]?.emailAddress || "",
@@ -63,11 +64,13 @@ export const extractUser = async (req, res, next) => {
             role: user.publicMetadata?.role || "student",
           };
           return next();
+        } catch (tokenError) {
+          console.log("Token verification failed, falling back to session");
         }
       }
     }
 
-    // Fallback to Clerk session (for development)
+    // Fallback to session-based auth (for development)
     const userId = req.auth?.userId;
     if (!userId) {
       return res

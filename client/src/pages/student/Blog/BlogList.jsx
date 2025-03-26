@@ -213,21 +213,17 @@ const BlogList = ({ blogs: initialBlogs }) => {
       );
       setBlogs(updatedBlogs);
 
-      // Prepare request config
-      const config = {
-        headers: {},
-      };
-
-      // Add authorization header if in production
-      if (process.env.NODE_ENV !== "development") {
-        const token = await user.getToken();
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      // Get fresh token for each request
+      const token = await user.getToken();
 
       const res = await axios.put(
         `${backendUrl}/api/blogs/${blogId}/like`,
         {},
-        config
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       // Final update with server response
@@ -240,6 +236,10 @@ const BlogList = ({ blogs: initialBlogs }) => {
       console.error("Error liking blog:", error);
       // Revert on error
       setBlogs(initialBlogs);
+
+      if (error.response?.status === 401) {
+        alert("Session expired. Please log in again.");
+      }
     } finally {
       setLoadingStates((prev) => ({ ...prev, [blogId]: false }));
     }
