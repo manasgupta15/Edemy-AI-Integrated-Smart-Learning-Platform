@@ -47,7 +47,7 @@ await connectCloudinary();
 // app.use(cors());
 app.use(
   cors({
-    origin: "http://localhost:5173", // ✅ Allow frontend URL
+    origin: process.env.CLIENT_URL, // ✅ Allow frontend URL
     credentials: true, // ✅ Allow authentication cookies
   })
 );
