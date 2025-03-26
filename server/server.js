@@ -97,8 +97,14 @@ io.on("connection", (socket) => {
 });
 
 // ✅ Live Code Execution API Without Docker
-const tempDir = path.join(__dirname, "temp");
-if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+//! const tempDir = path.join(__dirname, "temp");
+//! if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+const tempDir =
+  process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
+if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
+  fs.mkdirSync(tempDir);
+}
 
 const languages = {
   c: { ext: "c", compile: "gcc", run: "temp" },
