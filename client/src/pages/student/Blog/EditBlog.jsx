@@ -8,7 +8,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
-import FontSize from "@tiptap/extension-font-size"; // Add this for font size
 
 const EditBlog = () => {
   const { id } = useParams();
