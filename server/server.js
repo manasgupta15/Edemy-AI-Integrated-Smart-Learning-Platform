@@ -139,14 +139,19 @@ const executeCodeCloud = async (language, code) => {
 
     const payload = {
       language: pistonLang,
-      source: code,
-      version: "*", // This is the critical fix
+      version: "*",
+      files: [
+        {
+          // This is the critical fix
+          name: `main.${pistonLang}`,
+          content: code,
+        },
+      ],
     };
 
     console.log("Sending to Piston API:", {
       language: pistonLang,
       codeLength: code.length,
-      version: "*",
     });
 
     const response = await axios.post(

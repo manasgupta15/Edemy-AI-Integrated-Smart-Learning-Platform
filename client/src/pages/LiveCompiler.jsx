@@ -204,7 +204,6 @@ import "ace-builds/src-noconflict/theme-xcode";
 
 // Pre-written code snippets for each language
 const codeSnippets = {
-  // Fixed typo from codeSnippets
   c: `#include <stdio.h>
 
 int main() {
@@ -221,7 +220,7 @@ int main() {
   javascript: `console.log("Hello, World!");`,
 };
 
-// Language options - simplified since we're using the same codes for Piston
+// Language options
 const languages = [
   { value: "c", label: "C" },
   { value: "cpp", label: "C++" },
@@ -245,13 +244,12 @@ const LiveCompiler = () => {
   }, [language]);
 
   // Handle Code Execution
-  // Update only the runCode function:
   const runCode = async () => {
     setIsLoading(true);
     setOutput("Running code...");
     console.log("Executing code:", {
       language,
-      code: code.substring(0, 100) + (code.length > 100 ? "..." : ""),
+      codePreview: code.substring(0, 50) + (code.length > 50 ? "..." : ""),
     });
 
     try {
@@ -264,23 +262,25 @@ const LiveCompiler = () => {
 
       console.log("Execution completed in", duration, "ms", {
         success: response.data.success,
-        outputLength: response.data.output?.length,
+        output: response.data.output ? "Received output" : "No output",
         error: response.data.error,
       });
 
       if (response.data.success) {
-        setOutput(response.data.output || "Code executed (no output)");
+        setOutput(
+          response.data.output || "Code executed successfully (no output)"
+        );
       } else {
         setOutput(response.data.error || "Execution failed (no error details)");
       }
     } catch (error) {
-      console.error("Execution request failed:", {
-        error: error.message,
+      console.error("Execution error:", {
+        message: error.message,
         response: error.response?.data,
         code: error.code,
       });
 
-      let errorMessage = "Connection failed";
+      let errorMessage = "Failed to execute code";
       if (error.response) {
         errorMessage =
           error.response.data?.error ||
@@ -377,12 +377,13 @@ const LiveCompiler = () => {
         width="100%"
         height="500px"
         setOptions={{
-          enableBasicAutocompletion: true,
-          enableLiveAutocompletion: true,
-          enableSnippets: true,
           showLineNumbers: true,
           tabSize: 2,
           useWorker: false,
+          // Removed problematic options:
+          // enableBasicAutocompletion: false,
+          // enableLiveAutocompletion: false,
+          // enableSnippets: false
         }}
       />
 
@@ -433,7 +434,7 @@ const LiveCompiler = () => {
         <pre
           className={`text-sm mt-2 ${
             isDarkMode ? "text-green-400" : "text-green-800"
-          }`}
+          } whitespace-pre-wrap break-words`}
         >
           {output}
         </pre>
