@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
+import { AppContext } from "../../context/AppContext";
 
 const Chatbot = () => {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
+
+  const { backendUrl } = useContext(AppContext);
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -12,10 +15,9 @@ const Chatbot = () => {
     setChat([...chat, userMessage]);
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:5000/api/chatbot/chat",
-        { message }
-      );
+      const { data } = await axios.post(`${backendUrl}/api/chatbot/chat`, {
+        message,
+      });
       const botMessage = { sender: "bot", text: data.reply };
       setChat((prevChat) => [...prevChat, botMessage]);
     } catch (error) {
