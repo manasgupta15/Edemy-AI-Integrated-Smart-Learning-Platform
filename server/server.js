@@ -189,22 +189,59 @@ const executeCodeLocal = (language, code) => {
 };
 
 // Unified execution endpoint
+// In your server.js, replace the execute endpoint with this:
+
+// Unified execution endpoint
 app.post("/api/execute", async (req, res) => {
   const { language, code } = req.body;
 
   try {
     let output;
 
-    // Use cloud execution in production, local in development
+    // Use cloud execution in production
     if (process.env.NODE_ENV === "production") {
-      output = await executeCodeCloud(language, code);
-    } else {
+      try {
+        const pistonLang = {
+          c: "c",
+          cpp: "cpp",
+          python: "python3",
+          javascript: "javascript",
+        }[language];
+
+        if (!pistonLang) {
+          throw new Error("Unsupported language for cloud execution");
+        }
+
+        const response = await axios.post(
+          "https://emkc.org/api/v2/piston/execute",
+          {
+            language: pistonLang,
+            source: code,
+          }
+        );
+
+        output =
+          response.data.run?.output || response.data.run?.stderr || "No output";
+      } catch (apiError) {
+        console.error("Piston API error:", apiError);
+        throw new Error(
+          apiError.response?.data?.message || "Failed to execute code in cloud"
+        );
+      }
+    }
+    // Use local execution in development
+    else {
       output = await executeCodeLocal(language, code);
     }
 
     res.json({ success: true, output });
   } catch (err) {
-    res.json({ success: false, error: err.message });
+    console.error("Execution error:", err);
+    res.json({
+      success: false,
+      error: err.message || "Unknown execution error",
+      details: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    });
   }
 });
 

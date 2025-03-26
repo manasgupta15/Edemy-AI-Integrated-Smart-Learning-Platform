@@ -251,15 +251,33 @@ const LiveCompiler = () => {
 
     try {
       const response = await axios.post(`${backendUrl}/api/execute`, {
-        language, // Now using the same language codes as Piston API
+        language, // Using direct language codes now
         code,
       });
 
-      // Updated response handling
-      setOutput(response.data.output || "No output");
+      // Handle both success and error cases properly
+      if (response.data.success) {
+        setOutput(
+          response.data.output ||
+            "Code executed successfully but produced no output"
+        );
+      } else {
+        setOutput(
+          response.data.error || "Execution failed without error message"
+        );
+      }
     } catch (error) {
-      console.error("Execution error:", error);
-      setOutput(error.response?.data?.error || "Error executing code");
+      console.error("API request failed:", error);
+      let errorMessage = "Failed to connect to execution service";
+
+      if (error.response) {
+        errorMessage =
+          error.response.data?.error ||
+          error.response.data?.message ||
+          "Execution failed";
+      }
+
+      setOutput(errorMessage);
     } finally {
       setIsLoading(false);
     }
