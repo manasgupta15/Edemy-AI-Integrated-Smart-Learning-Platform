@@ -46,50 +46,36 @@ import { clerkClient } from "@clerk/express";
 
 export const extractUser = async (req, res, next) => {
   try {
-    // First try to get from Authorization header
+    // Method 1: Check for Clerk session (development)
+    if (req.auth?.userId) {
+      const user = await clerkClient.users.getUser(req.auth.userId);
+      req.user = {
+        id: req.auth.userId,
+        fullName: `${user.firstName} ${user.lastName}`.trim() || "Anonymous",
+      };
+      return next();
+    }
+
+    // Method 2: Check Authorization header (production)
     const authHeader = req.headers.authorization;
-    if (authHeader) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
-      if (token) {
-        try {
-          const decoded = await clerkClient.verifyToken(token);
-          const user = await clerkClient.users.getUser(decoded.sub);
+      const decoded = await clerkClient.verifyToken(token);
+      const user = await clerkClient.users.getUser(decoded.sub);
 
-          req.user = {
-            id: decoded.sub,
-            email: user.emailAddresses?.[0]?.emailAddress || "",
-            fullName:
-              [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-              "Unknown",
-            role: user.publicMetadata?.role || "student",
-          };
-          return next();
-        } catch (tokenError) {
-          console.log("Token verification failed, falling back to session");
-        }
-      }
+      req.user = {
+        id: decoded.sub,
+        fullName: `${user.firstName} ${user.lastName}`.trim() || "Anonymous",
+      };
+      return next();
     }
 
-    // Fallback to session-based auth (for development)
-    const userId = req.auth?.userId;
-    if (!userId) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authorized" });
-    }
-
-    const user = await clerkClient.users.getUser(userId);
-    req.user = {
-      id: userId,
-      email: user.emailAddresses?.[0]?.emailAddress || "",
-      fullName:
-        [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown",
-      role: user.publicMetadata?.role || "student",
-    };
-
-    next();
+    // If neither method worked
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   } catch (error) {
-    console.error("Error in extractUser:", error);
-    res.status(500).json({ success: false, message: "Authentication error" });
+    console.error("Authentication error:", error);
+    return res
+      .status(401)
+      .json({ success: false, message: "Authentication failed" });
   }
 };

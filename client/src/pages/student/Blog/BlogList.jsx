@@ -191,21 +191,20 @@ const BlogList = ({ blogs: initialBlogs }) => {
 
   const handleLike = async (blogId) => {
     if (!user) {
-      alert("You must be logged in to like a blog.");
+      alert("Please login to like blogs");
       return;
     }
 
     try {
-      setLoadingStates((prev) => ({ ...prev, [blogId]: true }));
+      // Get fresh token every time
+      const token = await user.getToken();
 
-      // Optimistic UI update
-      const blog = blogs.find((blog) => blog._id === blogId);
-      const isLiked = blog.likes.includes(user.id);
+      // Optimistic update
       const updatedBlogs = blogs.map((blog) =>
         blog._id === blogId
           ? {
               ...blog,
-              likes: isLiked
+              likes: blog.likes.includes(user.id)
                 ? blog.likes.filter((id) => id !== user.id)
                 : [...blog.likes, user.id],
             }
@@ -213,35 +212,31 @@ const BlogList = ({ blogs: initialBlogs }) => {
       );
       setBlogs(updatedBlogs);
 
-      // Get fresh token for each request
-      const token = await user.getToken();
-
       const res = await axios.put(
         `${backendUrl}/api/blogs/${blogId}/like`,
         {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
-      // Final update with server response
-      setBlogs((prevBlogs) =>
-        prevBlogs.map((blog) =>
+      // Sync with server response
+      setBlogs((prev) =>
+        prev.map((blog) =>
           blog._id === blogId ? { ...blog, likes: res.data.likes } : blog
         )
       );
     } catch (error) {
-      console.error("Error liking blog:", error);
+      console.error("Like error:", error);
       // Revert on error
-      setBlogs(initialBlogs);
+      setBlogs(blogs);
 
       if (error.response?.status === 401) {
-        alert("Session expired. Please log in again.");
+        alert("Session expired. Please refresh the page.");
       }
-    } finally {
-      setLoadingStates((prev) => ({ ...prev, [blogId]: false }));
     }
   };
 

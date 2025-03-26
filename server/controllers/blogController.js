@@ -127,13 +127,38 @@ export const getBlogById = async (req, res) => {
 /**
  * Like/Unlike a blog post
  */
+// export const likeBlog = async (req, res) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ success: false, message: "Unauthorized" });
+//     }
+
+//     const userId = req.user.id; // Clerk User ID
+//     const blog = await Blog.findById(req.params.id);
+//     if (!blog) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Blog not found" });
+//     }
+
+//     const index = blog.likes.indexOf(userId);
+
+//     if (index === -1) {
+//       blog.likes.push(userId); // Add user ID to likes array
+//     } else {
+//       blog.likes.splice(index, 1); // Remove user ID from likes array
+//     }
+
+//     await blog.save();
+//     res.json({ success: true, likes: blog.likes }); // Return updated likes array
+//   } catch (error) {
+//     console.error("❌ Error updating like status:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const likeBlog = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const userId = req.user.id; // Clerk User ID
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
       return res
@@ -141,19 +166,22 @@ export const likeBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
-    const index = blog.likes.indexOf(userId);
+    const userId = req.user.id; // From extractUser middleware
 
-    if (index === -1) {
-      blog.likes.push(userId); // Add user ID to likes array
+    // Check if user already liked
+    const likeIndex = blog.likes.indexOf(userId);
+
+    if (likeIndex === -1) {
+      blog.likes.push(userId); // Add like
     } else {
-      blog.likes.splice(index, 1); // Remove user ID from likes array
+      blog.likes.splice(likeIndex, 1); // Remove like
     }
 
     await blog.save();
-    res.json({ success: true, likes: blog.likes }); // Return updated likes array
+    res.json({ success: true, likes: blog.likes });
   } catch (error) {
-    console.error("❌ Error updating like status:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error liking blog:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
