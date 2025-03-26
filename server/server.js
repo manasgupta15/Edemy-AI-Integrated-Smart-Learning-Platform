@@ -122,9 +122,9 @@ const pistonLanguages = {
   javascript: "javascript",
 };
 
-// Cloud-based execution using Piston API
 const executeCodeCloud = async (language, code) => {
   try {
+    console.log("Attempting cloud execution for language:", language);
     const pistonLang = {
       c: "c",
       cpp: "cpp",
@@ -132,16 +132,31 @@ const executeCodeCloud = async (language, code) => {
       javascript: "javascript",
     }[language];
 
-    if (!pistonLang) throw new Error("Unsupported language");
+    if (!pistonLang) {
+      console.error("Unsupported language for cloud execution:", language);
+      throw new Error("Unsupported language");
+    }
+
+    const payload = {
+      language: pistonLang,
+      source: code,
+      version: "*", // This is the critical fix
+    };
+
+    console.log("Sending to Piston API:", {
+      language: pistonLang,
+      codeLength: code.length,
+      version: "*",
+    });
 
     const response = await axios.post(
       "https://emkc.org/api/v2/piston/execute",
-      {
-        language: pistonLang,
-        source: code,
-        version: "*", // This fixes the error
-      }
+      payload
     );
+    console.log("Piston API response:", {
+      status: response.status,
+      data: response.data,
+    });
 
     return (
       response.data.run?.output ||
@@ -149,7 +164,11 @@ const executeCodeCloud = async (language, code) => {
       "Code executed but no output"
     );
   } catch (error) {
-    console.error("Piston API error:", error);
+    console.error("Piston API error:", {
+      message: error.message,
+      response: error.response?.data,
+      stack: error.stack,
+    });
     throw new Error(error.response?.data?.message || "Execution failed");
   }
 };
@@ -195,56 +214,35 @@ const executeCodeLocal = (language, code) => {
 // Unified execution endpoint
 // In your server.js, replace the execute endpoint with this:
 
-// Unified execution endpoint
+// Update the /api/execute endpoint
 app.post("/api/execute", async (req, res) => {
-  const { language, code } = req.body;
+  console.log("Execution request received:", {
+    language: req.body.language,
+    codeLength: req.body.code?.length,
+  });
 
   try {
     let output;
 
-    // Use cloud execution in production
-    if (process.env.NODE_ENV === "production") {
-      try {
-        const pistonLang = {
-          c: "c",
-          cpp: "cpp",
-          python: "python3",
-          javascript: "javascript",
-        }[language];
-
-        if (!pistonLang) {
-          throw new Error("Unsupported language for cloud execution");
-        }
-
-        const response = await axios.post(
-          "https://emkc.org/api/v2/piston/execute",
-          {
-            language: pistonLang,
-            source: code,
-          }
-        );
-
-        output =
-          response.data.run?.output || response.data.run?.stderr || "No output";
-      } catch (apiError) {
-        console.error("Piston API error:", apiError);
-        throw new Error(
-          apiError.response?.data?.message || "Failed to execute code in cloud"
-        );
-      }
-    }
-    // Use local execution in development
-    else {
-      output = await executeCodeLocal(language, code);
+    if (process.env.VERCEL === "1") {
+      // More reliable than NODE_ENV for Vercel
+      console.log("Using cloud execution (Vercel production)");
+      output = await executeCodeCloud(req.body.language, req.body.code);
+    } else {
+      console.log("Using local execution (development)");
+      output = await executeCodeLocal(req.body.language, req.body.code);
     }
 
+    console.log("Execution successful. Output length:", output?.length);
     res.json({ success: true, output });
   } catch (err) {
-    console.error("Execution error:", err);
+    console.error("Execution failed:", {
+      error: err.message,
+      stack: err.stack,
+    });
     res.json({
       success: false,
       error: err.message || "Unknown execution error",
-      details: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
   }
 });

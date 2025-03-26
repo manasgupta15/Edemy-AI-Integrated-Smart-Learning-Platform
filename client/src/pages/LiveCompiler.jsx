@@ -245,36 +245,49 @@ const LiveCompiler = () => {
   }, [language]);
 
   // Handle Code Execution
+  // Update only the runCode function:
   const runCode = async () => {
     setIsLoading(true);
     setOutput("Running code...");
+    console.log("Executing code:", {
+      language,
+      code: code.substring(0, 100) + (code.length > 100 ? "..." : ""),
+    });
 
     try {
+      const startTime = Date.now();
       const response = await axios.post(`${backendUrl}/api/execute`, {
-        language, // Using direct language codes now
+        language,
         code,
       });
+      const duration = Date.now() - startTime;
 
-      // Handle both success and error cases properly
+      console.log("Execution completed in", duration, "ms", {
+        success: response.data.success,
+        outputLength: response.data.output?.length,
+        error: response.data.error,
+      });
+
       if (response.data.success) {
-        setOutput(
-          response.data.output ||
-            "Code executed successfully but produced no output"
-        );
+        setOutput(response.data.output || "Code executed (no output)");
       } else {
-        setOutput(
-          response.data.error || "Execution failed without error message"
-        );
+        setOutput(response.data.error || "Execution failed (no error details)");
       }
     } catch (error) {
-      console.error("API request failed:", error);
-      let errorMessage = "Failed to connect to execution service";
+      console.error("Execution request failed:", {
+        error: error.message,
+        response: error.response?.data,
+        code: error.code,
+      });
 
+      let errorMessage = "Connection failed";
       if (error.response) {
         errorMessage =
           error.response.data?.error ||
           error.response.data?.message ||
-          "Execution failed";
+          `Server error (${error.response.status})`;
+      } else if (error.request) {
+        errorMessage = "No response from server";
       }
 
       setOutput(errorMessage);
