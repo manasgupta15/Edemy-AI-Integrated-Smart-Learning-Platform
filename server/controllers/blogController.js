@@ -127,38 +127,13 @@ export const getBlogById = async (req, res) => {
 /**
  * Like/Unlike a blog post
  */
-// export const likeBlog = async (req, res) => {
-//   try {
-//     if (!req.user) {
-//       return res.status(401).json({ success: false, message: "Unauthorized" });
-//     }
-
-//     const userId = req.user.id; // Clerk User ID
-//     const blog = await Blog.findById(req.params.id);
-//     if (!blog) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Blog not found" });
-//     }
-
-//     const index = blog.likes.indexOf(userId);
-
-//     if (index === -1) {
-//       blog.likes.push(userId); // Add user ID to likes array
-//     } else {
-//       blog.likes.splice(index, 1); // Remove user ID from likes array
-//     }
-
-//     await blog.save();
-//     res.json({ success: true, likes: blog.likes }); // Return updated likes array
-//   } catch (error) {
-//     console.error("❌ Error updating like status:", error);
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
-
 export const likeBlog = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const userId = req.user.id; // Clerk User ID
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
       return res
@@ -166,29 +141,19 @@ export const likeBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
-    // Get clientId from request body (sent from frontend)
-    const clientId = req.body.clientId;
+    const index = blog.likes.indexOf(userId);
 
-    if (!clientId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Client ID required" });
-    }
-
-    // Check if client already liked
-    const likeIndex = blog.likes.indexOf(clientId);
-
-    if (likeIndex === -1) {
-      blog.likes.push(clientId); // Add like
+    if (index === -1) {
+      blog.likes.push(userId); // Add user ID to likes array
     } else {
-      blog.likes.splice(likeIndex, 1); // Remove like
+      blog.likes.splice(index, 1); // Remove user ID from likes array
     }
 
     await blog.save();
-    res.json({ success: true, likes: blog.likes });
+    res.json({ success: true, likes: blog.likes }); // Return updated likes array
   } catch (error) {
-    console.error("Error liking blog:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error updating like status:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
