@@ -157,9 +157,6 @@ export const getBlogById = async (req, res) => {
 //   }
 // };
 
-/**
- * Like/Unlike a blog post (without Clerk authentication)
- */
 export const likeBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -169,28 +166,26 @@ export const likeBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
-    // Get client identifier (combination of IP and user agent)
-    const ip = req.ip || req.connection.remoteAddress;
-    const userAgent = req.headers["user-agent"] || "";
-    const clientId = `${ip}-${userAgent}`.substring(0, 50); // Truncate to avoid too long strings
+    // Get clientId from request body (sent from frontend)
+    const clientId = req.body.clientId;
 
-    // Check if this client already liked
+    if (!clientId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Client ID required" });
+    }
+
+    // Check if client already liked
     const likeIndex = blog.likes.indexOf(clientId);
 
     if (likeIndex === -1) {
-      // Add like
-      blog.likes.push(clientId);
+      blog.likes.push(clientId); // Add like
     } else {
-      // Remove like
-      blog.likes.splice(likeIndex, 1);
+      blog.likes.splice(likeIndex, 1); // Remove like
     }
 
     await blog.save();
-    res.json({
-      success: true,
-      likes: blog.likes,
-      hasLiked: likeIndex === -1, // Returns true if user just liked, false if unliked
-    });
+    res.json({ success: true, likes: blog.likes });
   } catch (error) {
     console.error("Error liking blog:", error);
     res.status(500).json({ success: false, message: "Server error" });

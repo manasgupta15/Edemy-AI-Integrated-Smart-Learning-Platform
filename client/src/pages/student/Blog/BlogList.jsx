@@ -210,8 +210,10 @@ const BlogList = ({ blogs: initialBlogs }) => {
       );
       setBlogs(updatedBlogs);
 
-      // Send request to backend
-      const res = await axios.put(`${backendUrl}/api/blogs/${blogId}/like`);
+      // Send request to backend WITH clientId
+      const res = await axios.put(`${backendUrl}/api/blogs/${blogId}/like`, {
+        clientId, // Send our generated clientId
+      });
 
       // Final update with server response
       setBlogs((prev) =>
@@ -222,7 +224,13 @@ const BlogList = ({ blogs: initialBlogs }) => {
     } catch (error) {
       console.error("Error liking blog:", error);
       // Revert on error
-      setBlogs(initialBlogs);
+      setBlogs(blogs);
+
+      if (error.response?.status === 401) {
+        console.log(
+          "Make sure you removed extractUser middleware from your like route!"
+        );
+      }
     } finally {
       setLoadingStates((prev) => ({ ...prev, [blogId]: false }));
     }
