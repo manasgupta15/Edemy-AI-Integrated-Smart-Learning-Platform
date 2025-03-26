@@ -45,7 +45,6 @@ const EditBlog = () => {
       Underline,
       TextStyle,
       Color,
-      FontSize, // Add this for font size
     ],
     content: "", // Initial content
   });
