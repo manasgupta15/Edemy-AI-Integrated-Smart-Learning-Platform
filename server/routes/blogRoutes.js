@@ -20,7 +20,7 @@ router.post("/", extractUser, createBlog);
 router.get("/", getAllBlogs);
 router.get("/:id", getBlogById);
 router.delete("/:id", extractUser, deleteBlog);
-router.put("/:id/like", extractUser, likeBlog);
+router.put("/:id/like", likeBlog);
 router.post("/upload", extractUser, upload.single("image"), uploadImage); // Image upload route
 router.put("/:id/views", incrementViews); // Add the new route
 // New route for fetching blogs by educator

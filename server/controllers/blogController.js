@@ -157,6 +157,9 @@ export const getBlogById = async (req, res) => {
 //   }
 // };
 
+/**
+ * Like/Unlike a blog post (without Clerk authentication)
+ */
 export const likeBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -166,19 +169,28 @@ export const likeBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
-    const userId = req.user.id; // From extractUser middleware
+    // Get client identifier (combination of IP and user agent)
+    const ip = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers["user-agent"] || "";
+    const clientId = `${ip}-${userAgent}`.substring(0, 50); // Truncate to avoid too long strings
 
-    // Check if user already liked
-    const likeIndex = blog.likes.indexOf(userId);
+    // Check if this client already liked
+    const likeIndex = blog.likes.indexOf(clientId);
 
     if (likeIndex === -1) {
-      blog.likes.push(userId); // Add like
+      // Add like
+      blog.likes.push(clientId);
     } else {
-      blog.likes.splice(likeIndex, 1); // Remove like
+      // Remove like
+      blog.likes.splice(likeIndex, 1);
     }
 
     await blog.save();
-    res.json({ success: true, likes: blog.likes });
+    res.json({
+      success: true,
+      likes: blog.likes,
+      hasLiked: likeIndex === -1, // Returns true if user just liked, false if unliked
+    });
   } catch (error) {
     console.error("Error liking blog:", error);
     res.status(500).json({ success: false, message: "Server error" });

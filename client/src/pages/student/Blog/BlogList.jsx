@@ -160,29 +160,29 @@
 import { Link } from "react-router-dom";
 import { FaHeart, FaEye } from "react-icons/fa";
 import axios from "axios";
-import { useUser } from "@clerk/clerk-react";
 import { useContext, useState } from "react";
 import { AppContext } from "../../../context/AppContext";
 
 const BlogList = ({ blogs: initialBlogs }) => {
   const { backendUrl } = useContext(AppContext);
-  const { user } = useUser();
   const [blogs, setBlogs] = useState(initialBlogs);
   const [loadingStates, setLoadingStates] = useState({});
 
+  // Generate or get a unique client ID for this browser
+  const getClientId = () => {
+    let clientId = localStorage.getItem("blogClientId");
+    if (!clientId) {
+      clientId =
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("blogClientId", clientId);
+    }
+    return clientId;
+  };
+
   const handleViewBlog = async (blogId) => {
     try {
-      const config = {
-        headers: {},
-      };
-
-      // Add authorization header if in production and user is logged in
-      if (process.env.NODE_ENV !== "development" && user) {
-        const token = await user.getToken();
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-
-      await axios.put(`${backendUrl}/api/blogs/${blogId}/views`, {}, config);
+      await axios.put(`${backendUrl}/api/blogs/${blogId}/views`, {});
       window.location.href = `/blogs/${blogId}`;
     } catch (error) {
       console.error("Error incrementing views:", error);
@@ -190,54 +190,48 @@ const BlogList = ({ blogs: initialBlogs }) => {
   };
 
   const handleLike = async (blogId) => {
-    if (!user) {
-      alert("Please login to like blogs");
-      return;
-    }
-
     try {
-      // Get fresh token every time
-      const token = await user.getToken();
+      setLoadingStates((prev) => ({ ...prev, [blogId]: true }));
 
-      // Optimistic update
+      const clientId = getClientId();
+      const blog = blogs.find((b) => b._id === blogId);
+      const hasLiked = blog.likes.includes(clientId);
+
+      // Optimistic UI update
       const updatedBlogs = blogs.map((blog) =>
         blog._id === blogId
           ? {
               ...blog,
-              likes: blog.likes.includes(user.id)
-                ? blog.likes.filter((id) => id !== user.id)
-                : [...blog.likes, user.id],
+              likes: hasLiked
+                ? blog.likes.filter((id) => id !== clientId)
+                : [...blog.likes, clientId],
             }
           : blog
       );
       setBlogs(updatedBlogs);
 
-      const res = await axios.put(
-        `${backendUrl}/api/blogs/${blogId}/like`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Send request to backend
+      const res = await axios.put(`${backendUrl}/api/blogs/${blogId}/like`);
 
-      // Sync with server response
+      // Final update with server response
       setBlogs((prev) =>
         prev.map((blog) =>
           blog._id === blogId ? { ...blog, likes: res.data.likes } : blog
         )
       );
     } catch (error) {
-      console.error("Like error:", error);
+      console.error("Error liking blog:", error);
       // Revert on error
-      setBlogs(blogs);
-
-      if (error.response?.status === 401) {
-        alert("Session expired. Please refresh the page.");
-      }
+      setBlogs(initialBlogs);
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [blogId]: false }));
     }
+  };
+
+  // Check if current client liked a blog
+  const hasLiked = (blog) => {
+    const clientId = localStorage.getItem("blogClientId");
+    return clientId && blog.likes.includes(clientId);
   };
 
   return (
@@ -246,8 +240,8 @@ const BlogList = ({ blogs: initialBlogs }) => {
         {blogs.length > 0 ? (
           blogs.map(
             ({ _id, title, content, image, authorName, views, likes }) => {
-              const isLiked = user && likes.includes(user.id);
               const isLoading = loadingStates[_id];
+              const isLiked = hasLiked({ _id, likes });
 
               return (
                 <div
@@ -288,15 +282,12 @@ const BlogList = ({ blogs: initialBlogs }) => {
 
                       <button
                         onClick={() => handleLike(_id)}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                        className={`flex items-center gap-2 ${
+                          isLiked ? "text-pink-500" : "text-gray-400"
+                        } hover:text-pink-600 transition-colors`}
                         disabled={isLoading}
                       >
-                        <FaHeart
-                          size={18}
-                          className={
-                            isLiked ? "text-pink-500" : "text-gray-400"
-                          }
-                        />
+                        <FaHeart size={18} />
                         <span>{likes?.length || 0}</span>
                         {isLoading && <span className="ml-1">...</span>}
                       </button>
