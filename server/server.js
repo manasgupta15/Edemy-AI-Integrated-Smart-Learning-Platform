@@ -164,12 +164,12 @@ io.on("connection", (socket) => {
 const tempDir =
   process.env.NODE_ENV === "production" ? "/tmp" : path.join(__dirname, "temp");
 
-// ✅ Only create temp directory locally (Vercel already has /tmp)
+// ✅ Only create temp directory locally
 if (!fs.existsSync(tempDir) && process.env.NODE_ENV !== "production") {
   fs.mkdirSync(tempDir);
 }
 
-// ✅ Dynamically determine Python version based on environment
+// ✅ Use correct Python command
 const pythonCommand =
   process.env.NODE_ENV === "production" ? "python" : "python3";
 
@@ -200,7 +200,6 @@ const executeCode = (language, code) => {
         return reject(new Error(stderr || error.message));
       }
 
-      // ✅ Run compiled C/C++ executable correctly across different OS
       if (langConfig.compile) {
         const runCommand =
           os.platform() === "win32" ? `${executablePath}.exe` : executablePath;
