@@ -207,6 +207,73 @@ const SubmitAssignment = () => {
     setFormData({ ...formData, file: e.target.files[0] });
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   if (!formData.file) {
+  //     setMessage("⚠️ Please select a file to upload");
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setMessage("");
+
+  //   try {
+  //     const token = await getToken(); // Get the authentication token
+  //     const formDataToSend = new FormData();
+
+  //     // Append all form data
+  //     formDataToSend.append("courseId", formData.courseId);
+  //     formDataToSend.append("studentId", formData.studentId);
+  //     formDataToSend.append("name", formData.name);
+  //     formDataToSend.append("email", formData.email);
+  //     formDataToSend.append("status", formData.status);
+  //     formDataToSend.append("file", formData.file);
+
+  //     const response = await axios.post(
+  //       `${backendUrl}/api/assignments/submit`,
+  //       formDataToSend,
+  //       {
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         withCredentials: true, // Important for session-based auth
+  //       }
+  //     );
+
+  //     setMessage("🎉 Assignment submitted successfully!");
+  //     console.log("Submission successful:", response.data);
+
+  //     // Reset form after successful submission
+  //     setFormData({
+  //       ...formData,
+  //       file: null,
+  //     });
+  //     document.querySelector('input[type="file"]').value = ""; // Clear file input
+  //   } catch (error) {
+  //     console.error("Submission error:", error);
+
+  //     let errorMessage = "⚠️ Error submitting assignment";
+  //     if (error.response) {
+  //       // Handle different types of 400 errors
+  //       if (error.response.data?.message) {
+  //         errorMessage = `⚠️ ${error.response.data.message}`;
+  //       } else if (error.response.status === 413) {
+  //         errorMessage =
+  //           "⚠️ File size too large. Please upload a smaller file.";
+  //       } else if (error.response.status === 415) {
+  //         errorMessage =
+  //           "⚠️ Unsupported file type. Please upload a different file format.";
+  //       }
+  //     }
+
+  //     setMessage(errorMessage);
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -219,10 +286,9 @@ const SubmitAssignment = () => {
     setMessage("");
 
     try {
-      const token = await getToken(); // Get the authentication token
+      const token = await getToken();
       const formDataToSend = new FormData();
 
-      // Append all form data
       formDataToSend.append("courseId", formData.courseId);
       formDataToSend.append("studentId", formData.studentId);
       formDataToSend.append("name", formData.name);
@@ -238,37 +304,22 @@ const SubmitAssignment = () => {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true, // Important for session-based auth
         }
       );
 
       setMessage("🎉 Assignment submitted successfully!");
-      console.log("Submission successful:", response.data);
+      setFormData({ ...formData, file: null });
 
-      // Reset form after successful submission
-      setFormData({
-        ...formData,
-        file: null,
-      });
-      document.querySelector('input[type="file"]').value = ""; // Clear file input
+      // To download later: `${backendUrl}/api/assignments/file/${response.data.assignment.fileId}`
     } catch (error) {
-      console.error("Submission error:", error);
-
       let errorMessage = "⚠️ Error submitting assignment";
-      if (error.response) {
-        // Handle different types of 400 errors
-        if (error.response.data?.message) {
-          errorMessage = `⚠️ ${error.response.data.message}`;
-        } else if (error.response.status === 413) {
-          errorMessage =
-            "⚠️ File size too large. Please upload a smaller file.";
-        } else if (error.response.status === 415) {
-          errorMessage =
-            "⚠️ Unsupported file type. Please upload a different file format.";
-        }
+
+      if (error.response?.data?.error) {
+        errorMessage = `⚠️ ${error.response.data.error}`;
       }
 
       setMessage(errorMessage);
+      console.error("Submission error:", error);
     } finally {
       setIsSubmitting(false);
     }

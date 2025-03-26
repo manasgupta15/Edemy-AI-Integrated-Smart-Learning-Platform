@@ -155,68 +155,118 @@ const AddCourse = () => {
   //   }
   // };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   if (!image) {
+  //     toast.error("Thumbnail not selected !!");
+  //     return;
+  //   }
+
+  //   if (!quillRef.current) {
+  //     toast.error("Editor is not initialized.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const courseData = {
+  //       courseTitle,
+  //       courseDescription: quillRef.current.root.innerHTML,
+  //       coursePrice: Number(coursePrice),
+  //       discount: Number(discount),
+  //       courseContent: chapters,
+  //     };
+
+  //     const formData = new FormData();
+  //     formData.append("courseData", JSON.stringify(courseData)); // Convert to JSON string
+  //     formData.append("image", image); // Append image file
+
+  //     // Log FormData for debugging
+  //     for (let [key, value] of formData.entries()) {
+  //       console.log(key, value);
+  //     }
+
+  //     const token = await getToken();
+  //     if (!token) {
+  //       toast.error("Authentication failed. Please log in again.");
+  //       return;
+  //     }
+
+  //     const { data } = await axios.post(
+  //       backendUrl + "/api/educator/add-course",
+  //       formData,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "multipart/form-data", // Ensure correct content type
+  //         },
+  //       }
+  //     );
+
+  //     if (data.success) {
+  //       toast.success(data.message);
+  //       setCourseTitle("");
+  //       setCoursePrice(0);
+  //       setDiscount(0);
+  //       setImage(null);
+  //       setChapters([]);
+  //       quillRef.current.root.innerHTML = "";
+  //     } else {
+  //       toast.error(data.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding course:", error);
+  //     toast.error(error.response?.data?.message || "Something went wrong.");
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!image) {
-      toast.error("Thumbnail not selected !!");
-      return;
-    }
-
-    if (!quillRef.current) {
-      toast.error("Editor is not initialized.");
+      toast.error("Thumbnail not selected!");
       return;
     }
 
     try {
-      const courseData = {
-        courseTitle,
-        courseDescription: quillRef.current.root.innerHTML,
-        coursePrice: Number(coursePrice),
-        discount: Number(discount),
-        courseContent: chapters,
-      };
-
       const formData = new FormData();
-      formData.append("courseData", JSON.stringify(courseData)); // Convert to JSON string
-      formData.append("image", image); // Append image file
-
-      // Log FormData for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+      formData.append("image", image);
+      formData.append(
+        "courseData",
+        JSON.stringify({
+          courseTitle,
+          courseDescription: quillRef.current.root.innerHTML,
+          coursePrice: Number(coursePrice),
+          discount: Number(discount),
+          courseContent: chapters,
+        })
+      );
 
       const token = await getToken();
-      if (!token) {
-        toast.error("Authentication failed. Please log in again.");
-        return;
-      }
-
-      const { data } = await axios.post(
-        backendUrl + "/api/educator/add-course",
+      const response = await axios.post(
+        `${backendUrl}/api/educator/add-course`,
         formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data", // Ensure correct content type
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
-      if (data.success) {
-        toast.success(data.message);
+      if (response.data.success) {
+        toast.success("Course added successfully!");
+        // Reset form
         setCourseTitle("");
         setCoursePrice(0);
         setDiscount(0);
         setImage(null);
         setChapters([]);
         quillRef.current.root.innerHTML = "";
-      } else {
-        toast.error(data.message);
       }
     } catch (error) {
       console.error("Error adding course:", error);
-      toast.error(error.response?.data?.message || "Something went wrong.");
+      toast.error(error.response?.data?.message || "Failed to add course");
     }
   };
   useEffect(() => {

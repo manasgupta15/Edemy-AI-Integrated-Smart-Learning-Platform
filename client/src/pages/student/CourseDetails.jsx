@@ -378,6 +378,7 @@ const CourseDetails = () => {
   const [openSections, setOpenSections] = useState({});
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [playerData, setPlayerData] = useState(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
 
   const {
     calculateRating,
@@ -455,6 +456,14 @@ const CourseDetails = () => {
       setIsAlreadyEnrolled(userData.enrolledCourses.includes(courseData._id));
     }
   }, [userData, courseData]);
+
+  useEffect(() => {
+    if (courseData?.courseThumbnail) {
+      setThumbnailUrl(
+        `${backendUrl}/api/educator/thumbnail/${courseData.courseThumbnail}`
+      );
+    }
+  }, [courseData, backendUrl]);
 
   // ✅ Toggle Section Visibility
   const toggleSection = (index) => {
@@ -631,7 +640,15 @@ const CourseDetails = () => {
               iframeClassName="w-full aspect-video"
             />
           ) : (
-            <img src={courseData.courseThumbnail} alt="" />
+            // <img src={courseData.courseThumbnail} alt="" />
+            <img
+              src={thumbnailUrl || assets.placeholder_image}
+              alt={courseData.courseTitle}
+              onError={(e) => {
+                e.target.src = assets.placeholder_image;
+              }}
+              className="w-full h-full object-cover"
+            />
           )}
 
           <div className="p-5">

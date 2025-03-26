@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import connectDB from "./configs/mongodb.js";
+import { connectDB } from "./configs/mongodb.js";
 import { clerkWebhooks } from "./controllers/webhooks.js";
 import educatorRouter from "./routes/educatorRoutes.js";
 import { clerkMiddleware } from "@clerk/express";
@@ -18,6 +18,7 @@ import { Server } from "socket.io";
 import blogRoutes from "./routes/blogRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import axios from "axios";
+import fileUpload from "express-fileupload";
 
 // Import Routes
 import quizRoutes from "./routes/quizRoutes.js";
@@ -79,6 +80,27 @@ app.use(
 app.use(clerkMiddleware());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// app.use(
+//   fileUpload({
+//     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+//     useTempFiles: false,
+//     createParentPath: true,
+//   })
+// );
+
+// Keep these essential middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Keep this!
+
+// Then add fileUpload with proper configuration
+app.use(
+  fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    useTempFiles: false,
+    createParentPath: true,
+  })
+);
 
 // Static Files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

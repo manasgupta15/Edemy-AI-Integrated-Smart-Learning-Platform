@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 const MyCourses = () => {
   const { currency, backendUrl, isEducator, getToken } = useContext(AppContext);
   const [courses, setCourses] = useState(null);
+  const [thumbnailUrls, setThumbnailUrls] = useState({});
 
   const fetchEducatorCourses = async () => {
     try {
@@ -26,6 +27,20 @@ const MyCourses = () => {
       fetchEducatorCourses();
     }
   }, [isEducator]);
+
+  useEffect(() => {
+    if (courses) {
+      const newThumbnailUrls = {};
+      courses.forEach((course) => {
+        if (course.courseThumbnail) {
+          newThumbnailUrls[
+            course._id
+          ] = `${backendUrl}/api/educator/thumbnail/${course.courseThumbnail}`;
+        }
+      });
+      setThumbnailUrls(newThumbnailUrls);
+    }
+  }, [courses, backendUrl]);
 
   return courses ? (
     <div className="h-screen flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0">
@@ -53,7 +68,7 @@ const MyCourses = () => {
                 <tr key={course._id} className="border-b border-gray-500/20">
                   <td className="md:px-4 pl-2 md:pl-4 py-3 flex items-center space-x-3 truncate">
                     <img
-                      src={course.courseThumbnail}
+                      src={thumbnailUrls[course._id]}
                       alt="Course image"
                       className="w-16"
                     />

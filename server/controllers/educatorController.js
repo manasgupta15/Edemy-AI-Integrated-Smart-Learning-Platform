@@ -3,6 +3,8 @@ import Course from "../models/Course.js";
 import { v2 as cloudinary } from "cloudinary";
 import { Purchase } from "../models/Purchase.js";
 import User from "../models/User.js";
+import { gfs } from "../configs/mongodb.js";
+import mongoose from "mongoose";
 
 // update role to educator
 export const updateRoleToEducator = async (req, res) => {
@@ -47,62 +49,171 @@ export const updateRoleToEducator = async (req, res) => {
 //   }
 // };
 
+// export const addCourse = async (req, res) => {
+//   try {
+//     // Access the uploaded file
+//     const image = req.file;
+
+//     if (!image) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Image is required" });
+//     }
+
+//     // Access the courseData field from req.body
+//     const { courseData } = req.body;
+
+//     if (!courseData) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Course data is required" });
+//     }
+
+//     // Parse the courseData JSON string
+//     const parsedCourseData = JSON.parse(courseData);
+
+//     // Get the educator ID from the authenticated user
+//     const educatorId = req.user?.id; // Access the user ID from req.user
+
+//     if (!educatorId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Educator ID is required" });
+//     }
+
+//     // Log the parsed data and file for debugging
+//     console.log("Parsed Course Data:", parsedCourseData);
+//     console.log("Uploaded Image:", image);
+
+//     // Upload the image to Cloudinary
+//     const cloudinaryResponse = await cloudinary.uploader.upload(image.path, {
+//       folder: "course-thumbnails", // Optional: Organize images in a folder
+//     });
+
+//     // Process the data and save to the database
+//     const newCourse = new Course({
+//       ...parsedCourseData,
+//       courseThumbnail: cloudinaryResponse.secure_url, // Save the Cloudinary URL
+//       educator: educatorId, // Add the educator ID
+//     });
+
+//     await newCourse.save();
+
+//     res
+//       .status(201)
+//       .json({ success: true, message: "Course added successfully" });
+//   } catch (error) {
+//     console.error("Error adding course:", error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
+
+// Add new Course with GridFS
 export const addCourse = async (req, res) => {
   try {
-    // Access the uploaded file
-    const image = req.file;
-
-    if (!image) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Image is required" });
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({
+        success: false,
+        message: "Thumbnail image is required",
+      });
     }
 
-    // Access the courseData field from req.body
-    const { courseData } = req.body;
-
-    if (!courseData) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Course data is required" });
+    if (!req.body.courseData) {
+      return res.status(400).json({
+        success: false,
+        message: "Course data is required",
+      });
     }
 
-    // Parse the courseData JSON string
-    const parsedCourseData = JSON.parse(courseData);
+    const image = req.files.image;
+    const parsedCourseData = JSON.parse(req.body.courseData);
+    const educatorId = req.auth.userId;
 
-    // Get the educator ID from the authenticated user
-    const educatorId = req.user?.id; // Access the user ID from req.user
-
-    if (!educatorId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Educator ID is required" });
-    }
-
-    // Log the parsed data and file for debugging
-    console.log("Parsed Course Data:", parsedCourseData);
-    console.log("Uploaded Image:", image);
-
-    // Upload the image to Cloudinary
-    const cloudinaryResponse = await cloudinary.uploader.upload(image.path, {
-      folder: "course-thumbnails", // Optional: Organize images in a folder
+    // Create a unique filename
+    const filename = `${Date.now()}-${image.name.replace(/\s+/g, "-")}`;
+    const uploadStream = gfs.openUploadStream(filename, {
+      contentType: image.mimetype,
     });
 
-    // Process the data and save to the database
+    // Store the file ID for potential cleanup
+    const fileId = uploadStream.id;
+
+    // Write the file buffer to GridFS
+    uploadStream.end(image.data);
+
+    // Wait for the upload to complete
+    await new Promise((resolve, reject) => {
+      uploadStream.on("finish", resolve);
+      uploadStream.on("error", reject);
+    });
+
+    // Get the uploaded file document
+    const files = await gfs.find({ _id: fileId }).toArray();
+    if (!files || files.length === 0) {
+      throw new Error("Failed to verify uploaded file");
+    }
+
+    const uploadedFile = files[0];
+
+    // Create new course with GridFS reference
     const newCourse = new Course({
       ...parsedCourseData,
-      courseThumbnail: cloudinaryResponse.secure_url, // Save the Cloudinary URL
-      educator: educatorId, // Add the educator ID
+      courseThumbnail: uploadedFile._id.toString(),
+      educator: educatorId,
     });
 
     await newCourse.save();
 
-    res
-      .status(201)
-      .json({ success: true, message: "Course added successfully" });
+    res.status(201).json({
+      success: true,
+      message: "Course added successfully",
+      course: newCourse,
+    });
   } catch (error) {
     console.error("Error adding course:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+
+    // Clean up uploaded file if error occurred
+    if (fileId) {
+      try {
+        await gfs.delete(fileId);
+      } catch (cleanupError) {
+        console.error("Failed to clean up thumbnail:", cleanupError);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to add course",
+    });
+  }
+};
+
+// Get thumbnail image
+export const getThumbnail = async (req, res) => {
+  try {
+    const fileId = new mongoose.Types.ObjectId(req.params.id);
+
+    // Check if file exists
+    const files = await gfs.find({ _id: fileId }).toArray();
+    if (!files || files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Thumbnail not found",
+      });
+    }
+
+    // Set proper headers
+    res.set("Content-Type", files[0].contentType);
+    res.set("Cache-Control", "public, max-age=31536000");
+
+    const downloadStream = gfs.openDownloadStream(fileId);
+    downloadStream.pipe(res);
+  } catch (error) {
+    console.error("Error retrieving thumbnail:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to retrieve thumbnail",
+    });
   }
 };
 

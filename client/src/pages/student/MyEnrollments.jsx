@@ -20,6 +20,7 @@ const MyEnrollments = () => {
   const [progressArray, setProgressArray] = useState(
     enrolledCourses.map(() => ({ totalLectures: 0, lectureCompleted: 0 }))
   );
+  const [thumbnailUrls, setThumbnailUrls] = useState({});
 
   const getCourseProgress = async () => {
     try {
@@ -59,6 +60,20 @@ const MyEnrollments = () => {
     }
   }, [enrolledCourses, userData]);
 
+  useEffect(() => {
+    if (enrolledCourses.length > 0) {
+      const newThumbnailUrls = {};
+      enrolledCourses.forEach((course) => {
+        if (course.courseThumbnail) {
+          newThumbnailUrls[
+            course._id
+          ] = `${backendUrl}/api/educator/thumbnail/${course.courseThumbnail}`;
+        }
+      });
+      setThumbnailUrls(newThumbnailUrls);
+    }
+  }, [enrolledCourses, backendUrl]);
+
   return (
     <>
       <div className="md:px-36 px-8 pt-10">
@@ -76,9 +91,15 @@ const MyEnrollments = () => {
             {enrolledCourses.map((course, index) => (
               <tr key={index} className="border-b border-gray-500/20">
                 <td className="md:px-4 pl-2 md:pl-4 py-3 flex items-center space-x-3">
-                  <img
+                  {/* <img
                     src={course.courseThumbnail}
                     alt=""
+                    className="w-14 sm:w-24 md:w-28"
+                  /> */}
+
+                  <img
+                    src={thumbnailUrls[course._id]}
+                    alt={course.courseTitle}
                     className="w-14 sm:w-24 md:w-28"
                   />
                   <div className="flex-1">
