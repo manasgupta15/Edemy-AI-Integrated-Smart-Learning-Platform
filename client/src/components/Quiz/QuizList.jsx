@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react";
+import { AppContext } from "../../context/AppContext";
 
 const QuizList = () => {
+  const { backendUrl } = useContext(AppContext);
   const { courseId } = useParams();
   const { user } = useUser(); // ✅ Get user ID from Clerk
   const [quizzes, setQuizzes] = useState([]);
@@ -12,9 +14,7 @@ const QuizList = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const { data } = await axios.get(
-          `http://localhost:5000/api/quiz/${courseId}`
-        );
+        const { data } = await axios.get(`${backendUrl}/api/quiz/${courseId}`);
         setQuizzes(data);
       } catch (error) {
         console.error("Error fetching quizzes:", error);
@@ -31,7 +31,7 @@ const QuizList = () => {
       for (const quiz of quizzes) {
         try {
           const res = await axios.get(
-            `http://localhost:5000/api/quiz/result/${quiz._id}/${user.id}`
+            `${backendUrl}/api/quiz/result/${quiz._id}/${user.id}`
           );
           if (res.data) {
             completed.add(quiz._id);

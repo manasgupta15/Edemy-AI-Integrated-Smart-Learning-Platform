@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import axios from "axios";
+import { AppContext } from "../context/AppContext";
 
 const SubmitAssignment = () => {
+  const { backendUrl } = useContext(AppContext);
   const { id } = useParams();
   const { user } = useUser();
 
@@ -73,7 +75,7 @@ const SubmitAssignment = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/assignments/submit",
+        `${backendUrl}/api/assignments/submit`,
         formDataToSend,
         {
           headers: { "Content-Type": "multipart/form-data" },

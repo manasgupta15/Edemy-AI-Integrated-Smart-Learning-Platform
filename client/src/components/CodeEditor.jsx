@@ -1,54 +1,11 @@
-// import { useEffect, useState } from "react";
-// import { io } from "socket.io-client";
-
-// const socket = io("http://localhost:5000"); // Replace with your backend URL
-
-// const CodeEditor = ({ roomId, username }) => {
-//   const [code, setCode] = useState("");
-
-//   useEffect(() => {
-//     if (roomId) {
-//       socket.emit("join-room", roomId);
-//     }
-
-//     socket.on("receive-code", (newCode) => {
-//       setCode(newCode);
-//     });
-
-//     return () => {
-//       socket.off("receive-code");
-//     };
-//   }, [roomId]);
-
-//   const handleCodeChange = (e) => {
-//     const newCode = e.target.value;
-//     setCode(newCode);
-//     socket.emit("code-change", { roomId, code: newCode });
-//   };
-
-//   return (
-//     <div>
-//       <h2>Room: {roomId}</h2>
-//       <textarea
-//         value={code}
-//         onChange={handleCodeChange}
-//         rows="10"
-//         cols="50"
-//         placeholder="Type your code here..."
-//       />
-//     </div>
-//   );
-// };
-
-// export default CodeEditor;
-
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import Editor from "@monaco-editor/react";
-
-const socket = io("http://localhost:5000"); // Replace with your backend URL
+import { AppContext } from "../context/AppContext";
 
 const CodeEditor = ({ roomId, username }) => {
+  const { backendUrl } = useContext(AppContext);
+  const socket = io(`${backendUrl}`); // Replace with your backend URL
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const supportedLanguages = [

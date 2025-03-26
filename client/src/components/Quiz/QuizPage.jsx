@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react"; // ✅ Fetch user automatically from Clerk
+import { AppContext } from "../../context/AppContext";
 
 const QuizPage = () => {
+  const { backendUrl } = useContext(AppContext);
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user } = useUser(); // ✅ Get logged-in user details
@@ -43,7 +45,7 @@ const QuizPage = () => {
     const fetchQuiz = async () => {
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/api/quiz/single/${quizId}`
+          `${backendUrl}/api/quiz/single/${quizId}`
         );
         setQuiz(data);
 
@@ -61,7 +63,7 @@ const QuizPage = () => {
     const checkIfSubmitted = async () => {
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/api/quiz/result/${quizId}/${user.id}`
+          `${backendUrl}/api/quiz/result/${quizId}/${user.id}`
         );
         if (data) {
           setScore(data.score);
@@ -103,14 +105,11 @@ const QuizPage = () => {
     try {
       if (!quiz) return;
 
-      const { data } = await axios.post(
-        `http://localhost:5000/api/quiz/submit`,
-        {
-          userId: user.id,
-          quizId,
-          answers,
-        }
-      );
+      const { data } = await axios.post(`${backendUrl}/api/quiz/submit`, {
+        userId: user.id,
+        quizId,
+        answers,
+      });
 
       setScore(data.score);
       setTotalQuestions(data.totalQuestions);

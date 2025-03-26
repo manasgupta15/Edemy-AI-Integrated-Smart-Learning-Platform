@@ -1,128 +1,10 @@
-// import { useEffect, useState } from "react";
-// import { useLocation } from "react-router-dom";
-// import { useUser } from "@clerk/clerk-react"; // ✅ Import Clerk's useUser hook
-
-// const PaymentSuccess = () => {
-//   const location = useLocation();
-//   const { user, isSignedIn } = useUser(); // ✅ Retrieve user info from Clerk
-
-//   const [courseId, setCourseId] = useState("");
-//   const [userId, setUserId] = useState("");
-//   const [isEnrolled, setIsEnrolled] = useState(false);
-
-//   useEffect(() => {
-//     console.log("Extracting data from URL and Clerk...");
-
-//     // ✅ Extract courseId from URL
-//     const params = new URLSearchParams(location.search);
-//     const courseIdFromUrl = params.get("courseId");
-
-//     if (courseIdFromUrl) {
-//       setCourseId(courseIdFromUrl);
-//       console.log("✅ Fetched courseId from URL:", courseIdFromUrl);
-//     } else {
-//       console.error("❌ courseId missing in URL!");
-//     }
-
-//     // ✅ Get userId directly from Clerk
-//     if (isSignedIn && user) {
-//       setUserId(user.id);
-//       console.log("✅ Retrieved userId from Clerk:", user.id);
-//     } else {
-//       console.error("❌ User is not signed in or missing!");
-//     }
-//   }, [location, user, isSignedIn]);
-
-//   //   const saveEnrollment = async () => {
-//   //     if (!courseId || !userId) {
-//   //       console.error("❌ Missing courseId or userId!");
-//   //       alert("Error: Missing courseId or userId.");
-//   //       return;
-//   //     }
-
-//   //     try {
-//   //       console.log("Attempting to save enrollment...");
-//   //       console.log("🔍 courseId:", courseId);
-//   //       console.log("🔍 userId:", userId);
-
-//   //       const response = await fetch(
-//   //         "http://localhost:5000/api/payment/save-enrollment",
-//   //         {
-//   //           method: "POST",
-//   //           headers: { "Content-Type": "application/json" },
-//   //           body: JSON.stringify({ courseId, userId, amount: 50 }),
-//   //         }
-//   //       );
-
-//   //       const data = await response.json();
-//   //       console.log("📩 Server Response:", data);
-
-//   //       if (response.ok) {
-//   //         alert("✅ Enrollment saved successfully!");
-//   //         setIsEnrolled(true);
-//   //       } else {
-//   //         alert(`⚠️ Error: ${data.message}`);
-//   //       }
-//   //     } catch (error) {
-//   //       console.error("❌ Network error:", error);
-//   //       alert("⚠️ Something went wrong!");
-//   //     }
-//   //   };
-//   const saveEnrollment = async () => {
-//     if (!courseId || !userId) {
-//       console.error("❌ Missing courseId or userId!");
-//       alert("Error: Missing courseId or userId.");
-//       return;
-//     }
-
-//     try {
-//       console.log("Attempting to save enrollment...");
-//       console.log("🔍 courseId:", courseId);
-//       console.log("🔍 userId:", userId);
-
-//       const response = await fetch(
-//         "http://localhost:5000/api/payment/save-enrollment",
-//         {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ courseId, userId, amount: 50 }),
-//         }
-//       );
-
-//       const data = await response.json();
-//       console.log("📩 Server Response:", data);
-
-//       if (response.ok) {
-//         alert("✅ Enrollment saved successfully!");
-//         setIsEnrolled(true);
-//       } else {
-//         console.error("❌ Error saving enrollment:", data.message);
-//         alert(`⚠️ Error: ${data.message}`);
-//       }
-//     } catch (error) {
-//       console.error("❌ Network error:", error);
-//       alert("⚠️ Something went wrong!");
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h1>Payment Successful</h1>
-//       <p>Thank you for enrolling!</p>
-//       <button onClick={saveEnrollment} disabled={isEnrolled}>
-//         {isEnrolled ? "Already Enrolled" : "Save Enrollment"}
-//       </button>
-//     </div>
-//   );
-// };
-
-// export default PaymentSuccess;
-
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { AppContext } from "../context/AppContext";
 
 const PaymentSuccess = () => {
+  const { backendUrl } = useContext(AppContext);
   const location = useLocation();
   const { user, isSignedIn } = useUser();
 
@@ -164,7 +46,7 @@ const PaymentSuccess = () => {
       console.log("🔍 userId:", userId);
 
       const response = await fetch(
-        "http://localhost:5000/api/payment/save-enrollment",
+        `${backendUrl}/api/payment/save-enrollment`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { AppContext } from "../../context/AppContext";
 
 const QuizResult = () => {
+  const { backendUrl } = useContext(AppContext);
   const { quizId } = useParams();
   const [result, setResult] = useState(null);
 
@@ -10,7 +12,7 @@ const QuizResult = () => {
     const fetchResult = async () => {
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/api/quiz/result/${quizId}`
+          `${backendUrl}/api/quiz/result/${quizId}`
         );
         setResult(data);
       } catch (error) {

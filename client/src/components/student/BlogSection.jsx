@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { FaHeart, FaEye } from "react-icons/fa"; // Import FaEye
 import { useUser } from "@clerk/clerk-react"; // Clerk authentication
+import { AppContext } from "../../context/AppContext";
 
 const BlogSection = () => {
+  const { backendUrl } = useContext(AppContext);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,7 +15,7 @@ const BlogSection = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/blogs?limit=3");
+        const res = await axios.get(`${backendUrl}/api/blogs?limit=3`);
         setBlogs(res.data.blogs || []);
         setLoading(false);
       } catch (error) {
@@ -34,7 +36,7 @@ const BlogSection = () => {
 
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/blogs/${blogId}/like`,
+        `${backendUrl}/api/blogs/${blogId}/like`,
         {},
         {
           withCredentials: true, // Send cookies (Clerk session)
@@ -56,7 +58,7 @@ const BlogSection = () => {
     try {
       // Call the incrementViews API
       await axios.put(
-        `http://localhost:5000/api/blogs/${blogId}/views`,
+        `${backendUrl}/api/blogs/${blogId}/views`,
         {},
         {
           withCredentials: true,

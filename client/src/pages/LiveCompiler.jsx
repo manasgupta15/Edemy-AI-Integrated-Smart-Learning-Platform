@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import AceEditor from "react-ace";
 import axios from "axios";
 
@@ -11,6 +11,7 @@ import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/theme-xcode";
+import { AppContext } from "../context/AppContext";
 
 // Pre-written code snippets for each language
 const codeSnippets = {
@@ -39,6 +40,7 @@ const languages = [
 ];
 
 const LiveCompiler = () => {
+  const { backendUrl } = useContext(AppContext);
   const [code, setCode] = useState(codeSnippets.python); // Default to Python
   const [language, setLanguage] = useState("python");
   const [output, setOutput] = useState("");
@@ -54,7 +56,7 @@ const LiveCompiler = () => {
   // Handle Code Execution
   const runCode = async () => {
     try {
-      const response = await axios.post("http://localhost:5000/api/execute", {
+      const response = await axios.post(`${backendUrl}/api/execute`, {
         language,
         code,
       });

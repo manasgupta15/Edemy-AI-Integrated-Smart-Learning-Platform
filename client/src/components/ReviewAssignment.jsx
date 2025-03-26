@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
 
 const ReviewAssignment = () => {
+  const { backendUrl } = useContext(AppContext);
   const { assignmentId } = useParams(); // Get the assignmentId from the URL
   const [assignment, setAssignment] = useState(null);
   const [status, setStatus] = useState(""); // "Reviewed" or "Pending"
@@ -17,7 +19,7 @@ const ReviewAssignment = () => {
     const fetchAssignment = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/assignments/single/${assignmentId}`
+          `${backendUrl}/api/assignments/single/${assignmentId}`
         );
         setAssignment(response.data);
         setLoading(false);
@@ -34,7 +36,7 @@ const ReviewAssignment = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/assignments/review/${assignmentId}`,
+        `${backendUrl}/api/assignments/review/${assignmentId}`,
         {
           status,
           feedback,
