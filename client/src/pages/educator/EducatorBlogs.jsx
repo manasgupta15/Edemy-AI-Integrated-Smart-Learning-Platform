@@ -84,13 +84,15 @@
 
 // export default EducatorBlogs;
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { Edit, Trash } from "lucide-react"; // Import icons for edit and delete
+import { AppContext } from "../../context/AppContext";
 
 const EducatorBlogs = () => {
+  const { backendUrl } = useContext(AppContext);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,12 +101,9 @@ const EducatorBlogs = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:5000/api/blogs/educator/blogs",
-          {
-            withCredentials: true,
-          }
-        );
+        const res = await axios.get(`${backendUrl}/api/blogs/educator/blogs`, {
+          withCredentials: true,
+        });
         setBlogs(res.data.blogs);
       } catch (error) {
         console.error("Error fetching blogs:", error);
@@ -119,7 +118,7 @@ const EducatorBlogs = () => {
 
   const handleDeleteBlog = async (blogId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/blogs/${blogId}`, {
+      await axios.delete(`${backendUrl}/api/blogs/${blogId}`, {
         withCredentials: true,
       });
       setBlogs(blogs.filter((blog) => blog._id !== blogId)); // Remove deleted blog from the list
