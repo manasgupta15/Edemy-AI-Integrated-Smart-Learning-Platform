@@ -45,10 +45,39 @@ await connectDB();
 await connectCloudinary();
 
 // Middlewares
+// app.use(
+//   cors({
+//     origin: process.env.CLIENT_URL,
+//     credentials: true,
+//   })
+// );
+
+// Replace your current CORS setup with:
+const allowedOrigins = [
+  "http://localhost:5173", // Local development
+  "https://edemy-ai-integrated-smart-learning-platform.vercel.app", // Production
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Origin",
+      "X-Requested-With",
+    ],
   })
 );
 app.use(clerkMiddleware());
