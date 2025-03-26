@@ -125,28 +125,32 @@ const pistonLanguages = {
 // Cloud-based execution using Piston API
 const executeCodeCloud = async (language, code) => {
   try {
-    const pistonLang = pistonLanguages[language];
-    if (!pistonLang)
-      throw new Error("Unsupported language for cloud execution");
+    const pistonLang = {
+      c: "c",
+      cpp: "cpp",
+      python: "python3",
+      javascript: "javascript",
+    }[language];
+
+    if (!pistonLang) throw new Error("Unsupported language");
 
     const response = await axios.post(
       "https://emkc.org/api/v2/piston/execute",
       {
         language: pistonLang,
         source: code,
+        version: "*", // This fixes the error
       }
     );
 
-    const result = response.data;
-
-    if (result.run) {
-      return result.run.output || result.run.stderr || "No output";
-    } else {
-      throw new Error("Execution failed");
-    }
+    return (
+      response.data.run?.output ||
+      response.data.run?.stderr ||
+      "Code executed but no output"
+    );
   } catch (error) {
     console.error("Piston API error:", error);
-    throw new Error(error.response?.data?.message || "Failed to execute code");
+    throw new Error(error.response?.data?.message || "Execution failed");
   }
 };
 
