@@ -15,6 +15,10 @@ import Navbar from "./components/student/Navbar";
 import "quill/dist/quill.snow.css";
 import { ToastContainer } from "react-toastify";
 import AssignmentList from "./components/AssignmentList";
+import BlogPage from "./pages/student/Blog/BlogPage";
+import BlogDetails from "./pages/student/Blog/BlogDetails";
+import CreateBlog from "./pages/student/Blog/CreateBlog";
+import EditBlog from "./pages/student/Blog/EditBlog";
 
 // ✅ Import Quiz & Assignment Components
 import QuizList from "./components/Quiz/QuizList";
@@ -33,6 +37,8 @@ import CollabRoom from "./components/CollabRoom";
 import QueryForm from "./pages/QueryForm";
 import UserQueries from "./pages/UserQueries";
 import EducatorQueries from "./pages/EducatorQueries";
+import BlogList from "./pages/student/Blog/BlogList";
+import EducatorBlogs from "./pages/educator/EducatorBlogs";
 const App = () => {
   const isEducatorRoute = useMatch("/educator/*");
 
@@ -74,6 +80,11 @@ const App = () => {
         {/* ✅ Query Routes */}
         <Route path="/submit-query" element={<QueryForm />} />
         <Route path="/my-queries" element={<UserQueries />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blogs/:id" element={<BlogDetails />} />
+        <Route path="/blog/create" element={<CreateBlog />} />
+        <Route path="/blog/edit/:id" element={<EditBlog />} />
+        <Route path="/blogs" element={<BlogList />} />
         {/* <Route path="/educator/queries" element={<EducatorQueries />} /> */}
         {/* ✅ Educator Routes */}
         <Route path="/educator" element={<Educator />}>
@@ -83,6 +94,8 @@ const App = () => {
           <Route path="my-courses" element={<MyCourses />} />
           <Route path="students-enrolled" element={<StudentsEnrolled />} />
           <Route path="add-quiz" element={<AddQuiz />} /> {/* New Route */}
+          <Route path="/educator/blogs" element={<EducatorBlogs />} />{" "}
+          {/* New route */}
           <Route
             path="assignments/view/:courseId"
             element={<AssignmentList />}

@@ -1,3 +1,4 @@
+import BlogSection from "../../components/student/BlogSection";
 import CallToAction from "../../components/student/CallToAction";
 import Companies from "../../components/student/Companies";
 import CourseSection from "../../components/student/CourseSection";
@@ -12,6 +13,7 @@ const Home = () => {
       <Companies />
       <CourseSection />
       <TestimonialsSection />
+      <BlogSection /> {/* ✅ Add Blog Section Here */}
       <CallToAction />
       <Footer />
     </div>

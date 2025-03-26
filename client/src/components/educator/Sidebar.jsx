@@ -28,6 +28,11 @@ const Sidebar = () => {
       path: "/educator/queries",
       icon: assets.query_icon, // ✅ Make sure to add a query icon in assets
     },
+    {
+      name: "My Blogs", // New menu item
+      path: "/educator/blogs",
+      icon: assets.blog_icon, // Add a blog icon in your assets
+    },
     // We’ll remove the dynamic course._id path here, and handle it separately
   ];
 

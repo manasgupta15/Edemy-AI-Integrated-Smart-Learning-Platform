@@ -44,6 +44,7 @@ import profile_img3 from "./profile_img3.png";
 import lesson_icon from "./lesson_icon.svg";
 import quiz_icon from "./quiz_icon.svg";
 import query_icon from "./query_icon.svg";
+import blog_icon from "./blog_icon.svg";
 
 export const assets = {
   logo,
@@ -92,6 +93,7 @@ export const assets = {
   lesson_icon,
   quiz_icon,
   query_icon,
+  blog_icon,
 };
 
 export const dummyEducatorData = {
