@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react"; // Clerk authentication
+import { AppContext } from "../../../context/AppContext";
 
 const BlogDetails = () => {
+  const { backendUrl } = useContext(AppContext);
   const { id } = useParams();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,13 +20,11 @@ const BlogDetails = () => {
   useEffect(() => {
     const fetchBlogAndComments = async () => {
       try {
-        const blogRes = await axios.get(
-          `http://localhost:5000/api/blogs/${id}`
-        );
+        const blogRes = await axios.get(`${backendUrl}/api/blogs/${id}`);
         setBlog(blogRes.data.blog);
 
         const commentsRes = await axios.get(
-          `http://localhost:5000/api/blogs/${id}/comments`
+          `${backendUrl}/api/blogs/${id}/comments`
         );
         setComments(commentsRes.data.comments);
       } catch (error) {
@@ -47,7 +47,7 @@ const BlogDetails = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/blogs/${id}/comments`,
+        `${backendUrl}/api/blogs/${id}/comments`,
         { content: newComment },
         { withCredentials: true }
       );
@@ -63,7 +63,7 @@ const BlogDetails = () => {
   const handleEditComment = async (commentId) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/comments/${commentId}`,
+        `${backendUrl}/api/comments/${commentId}`,
         { content: editedCommentContent },
         { withCredentials: true }
       );
@@ -82,7 +82,7 @@ const BlogDetails = () => {
   // Delete a comment
   const handleDeleteComment = async (commentId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/comments/${commentId}`, {
+      await axios.delete(`${backendUrl}/api/comments/${commentId}`, {
         withCredentials: true,
       });
 

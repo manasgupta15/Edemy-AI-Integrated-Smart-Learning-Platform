@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import CreateBlog from "./CreateBlog";
 import BlogList from "./BlogList";
 import axios from "axios";
+import { AppContext } from "../../../context/AppContext";
 
 const BlogPage = () => {
+  const { backendUrl } = useContext(AppContext);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,7 +14,7 @@ const BlogPage = () => {
   // Fetch Blogs from API
   const fetchBlogs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/blogs");
+      const res = await axios.get(`${backendUrl}/api/blogs`);
       setBlogs(res.data.success ? res.data.blogs : []);
     } catch (err) {
       setError("Failed to load blogs. Check server.");

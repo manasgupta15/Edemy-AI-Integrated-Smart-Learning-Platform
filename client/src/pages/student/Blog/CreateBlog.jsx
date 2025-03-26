@@ -1,5 +1,5 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { X } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -7,8 +7,10 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import { AppContext } from "../../../context/AppContext";
 
 const CreateBlog = ({ onClose }) => {
+  const { backendUrl } = useContext(AppContext);
   const { getToken } = useAuth();
   const { user, isLoaded } = useUser();
   const [title, setTitle] = useState("");
@@ -69,16 +71,12 @@ const CreateBlog = ({ onClose }) => {
 
     try {
       const userToken = await getToken();
-      const res = await axios.post(
-        "http://localhost:5000/api/blogs/upload",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post(`${backendUrl}/api/blogs/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return res.data.imageUrl;
     } catch (error) {
       setError("Failed to upload image.");
@@ -122,16 +120,12 @@ const CreateBlog = ({ onClose }) => {
         authorName: user.fullName || "Unknown",
       };
 
-      const response = await axios.post(
-        "http://localhost:5000/api/blogs",
-        blogData,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post(`${backendUrl}/api/blogs`, blogData, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       alert("Blog created successfully!");
       onClose();

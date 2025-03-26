@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth, useUser } from "@clerk/clerk-react"; // Clerk authentication
@@ -8,8 +8,10 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextStyle from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import { AppContext } from "../../../context/AppContext";
 
 const EditBlog = () => {
+  const { backendUrl } = useContext(AppContext);
   const { id } = useParams();
   const navigate = useNavigate();
   const { getToken } = useAuth();
@@ -52,7 +54,7 @@ const EditBlog = () => {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/blogs/${id}`);
+        const res = await axios.get(`${backendUrl}/api/blogs/${id}`);
         const blog = res.data.blog;
 
         // Populate form fields with fetched blog data
@@ -90,16 +92,12 @@ const EditBlog = () => {
 
     try {
       const userToken = await getToken();
-      const res = await axios.post(
-        "http://localhost:5000/api/blogs/upload",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post(`${backendUrl}/api/blogs/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return res.data.imageUrl;
     } catch (error) {
       setError("Failed to upload image.");
@@ -143,7 +141,7 @@ const EditBlog = () => {
       };
 
       const response = await axios.put(
-        `http://localhost:5000/api/blogs/${id}`,
+        `${backendUrl}/api/blogs/${id}`,
         blogData,
         {
           headers: {
