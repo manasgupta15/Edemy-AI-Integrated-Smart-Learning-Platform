@@ -208,6 +208,11 @@ const AssignmentList = () => {
     setSelectedFileId(null);
   };
 
+  const handleReviewAssignment = (assignmentId) => {
+    // Navigate to the review page for the specific assignment
+    window.location.href = `/educator/assignments/review/${assignmentId}`;
+  };
+
   if (loading)
     return <div className="text-center text-gray-500">Loading...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
@@ -275,6 +280,12 @@ const AssignmentList = () => {
                   >
                     Download
                   </a>
+                  <button
+                    onClick={() => handleReviewAssignment(assignment._id)}
+                    className="text-purple-500 hover:text-purple-700"
+                  >
+                    Review Assignment
+                  </button>
                 </div>
               </li>
             ))}
