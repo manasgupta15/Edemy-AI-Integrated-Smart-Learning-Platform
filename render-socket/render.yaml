@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: collab-socket-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    env: node
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_URL
+        value: https://your-vercel-app.vercel.app

@@ -14,7 +14,6 @@ import { exec } from "child_process";
 import fs from "fs";
 import os from "os";
 import { createServer } from "http";
-import { Server } from "socket.io";
 import blogRoutes from "./routes/blogRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import axios from "axios";
@@ -31,12 +30,6 @@ import queryRoutes from "./routes/queryRoutes.js";
 // Initialize Express & HTTP Server
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,19 +38,30 @@ const __dirname = path.dirname(__filename);
 await connectDB();
 await connectCloudinary();
 
-// Middlewares
-// app.use(
-//   cors({
-//     origin: process.env.CLIENT_URL,
-//     credentials: true,
-//   })
-// );
-
 const allowedOrigins = [
   "http://localhost:5173",
   "https://edemy-ai-integrated-smart-learning-platform.vercel.app",
 ];
 
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//     allowedHeaders: [
+//       "Content-Type",
+//       "Authorization",
+//       "Origin",
+//       "X-Requested-With",
+//     ],
+//   })
+// );
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -72,22 +76,13 @@ app.use(
     allowedHeaders: [
       "Content-Type",
       "Authorization",
-      "Origin",
       "X-Requested-With",
+      "Accept",
     ],
   })
 );
-app.use(clerkMiddleware());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// app.use(
-//   fileUpload({
-//     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-//     useTempFiles: false,
-//     createParentPath: true,
-//   })
-// );
+app.use(clerkMiddleware());
 
 // Keep these essential middlewares
 app.use(express.json());
@@ -124,24 +119,6 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/queries", queryRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api", commentRoutes);
-
-// WebSockets for Real-Time Code Collaboration
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`User ${socket.id} joined room ${roomId}`);
-  });
-
-  socket.on("code-change", ({ roomId, code }) => {
-    socket.to(roomId).emit("receive-code", code);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
 
 // ========== CODE EXECUTION SETUP ==========
 
