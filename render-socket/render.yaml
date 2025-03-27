@@ -5,8 +5,16 @@ services:
     buildCommand: npm install
     startCommand: npm start
     env: node
+    plan: free # Starts with free tier (upgrade later if needed)
+    autoDeploy: true # Automatically deploys on git push
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 3001
       - key: FRONTEND_URL
-        value: https://your-vercel-app.vercel.app
+        value: https://edemy-ai-integrated-smart-learning-platform.vercel.app
+      - key: NODE_ENV
+        value: production
+    scaling:
+      instances: 1 # Free tier allows only 1 instance
+      memory: 512MB # Free tier limit
