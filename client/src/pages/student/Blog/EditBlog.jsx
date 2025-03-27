@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth, useUser } from "@clerk/clerk-react"; // Clerk authentication
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { X } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -15,13 +15,14 @@ const EditBlog = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getToken } = useAuth();
-  const { user, isLoaded } = useUser(); // Clerk user state
+  const { user, isLoaded } = useUser();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [category, setCategory] = useState("Uncategorized");
   const [published, setPublished] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [existingImageId, setExistingImageId] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,8 +47,17 @@ const EditBlog = () => {
       TextStyle,
       Color,
     ],
-    content: "", // Initial content
+    content: "",
   });
+
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   // Fetch blog data when the component loads
   useEffect(() => {
@@ -61,7 +71,12 @@ const EditBlog = () => {
         setTags(blog.tags.join(", ")); // Convert tags array to comma-separated string
         setCategory(blog.category);
         setPublished(blog.published);
-        setPreview(blog.image); // Set image preview
+        setExistingImageId(blog.image); // Store the existing image ID
+
+        // Set preview URL based on whether we have an existing image
+        if (blog.image) {
+          setPreview(`${backendUrl}/api/blogs/image/${blog.image}`);
+        }
 
         // Set Tiptap editor content
         if (editor) {
@@ -74,23 +89,25 @@ const EditBlog = () => {
     };
 
     fetchBlog();
-  }, [id, editor]);
+  }, [id, editor, backendUrl]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPreview(URL.createObjectURL(file));
+      const previewUrl = URL.createObjectURL(file);
+      setPreview(previewUrl);
       setImage(file);
     }
   };
 
   const uploadImageToBackend = async () => {
-    if (!image) return null;
-    const formData = new FormData();
-    formData.append("image", image);
+    if (!image) return existingImageId; // Return existing ID if no new image
 
     try {
       const userToken = await getToken();
+      const formData = new FormData();
+      formData.append("image", image);
+
       const res = await axios.post(`${backendUrl}/api/blogs/upload`, formData, {
         headers: {
           Authorization: `Bearer ${userToken}`,
@@ -117,14 +134,16 @@ const EditBlog = () => {
 
     try {
       const userToken = await getToken();
-      let uploadedImageUrl = preview; // Use existing image URL if no new image is uploaded
+      let imageId = existingImageId; // Default to existing ID
 
+      // Only upload new image if one was selected
       if (image) {
-        uploadedImageUrl = await uploadImageToBackend();
-        if (!uploadedImageUrl) {
+        const uploadedImageId = await uploadImageToBackend();
+        if (!uploadedImageId) {
           setLoading(false);
           return;
         }
+        imageId = uploadedImageId;
       }
 
       // Get the current content from the editor
@@ -135,20 +154,16 @@ const EditBlog = () => {
         content, // Use the HTML content from Tiptap
         tags: tags.split(",").map((tag) => tag.trim()), // Convert comma-separated string to array
         category,
-        image: uploadedImageUrl,
+        image: imageId,
         published,
       };
 
-      const response = await axios.put(
-        `${backendUrl}/api/blogs/${id}`,
-        blogData,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await axios.put(`${backendUrl}/api/blogs/${id}`, blogData, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       alert("Blog updated successfully!");
       navigate("/educator/blogs"); // Redirect to educator blogs page
@@ -186,7 +201,7 @@ const EditBlog = () => {
           <div className="bg-white/20 rounded-lg p-2">
             <div className="flex gap-2 mb-2">
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`p-1 ${
                   editor.isActive("bold")
@@ -197,7 +212,7 @@ const EditBlog = () => {
                 Bold
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`p-1 ${
                   editor.isActive("italic")
@@ -208,7 +223,7 @@ const EditBlog = () => {
                 Italic
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 className={`p-1 ${
                   editor.isActive("underline")
@@ -219,7 +234,7 @@ const EditBlog = () => {
                 Underline
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
                 }
@@ -232,7 +247,7 @@ const EditBlog = () => {
                 H1
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 2 }).run()
                 }
@@ -245,7 +260,7 @@ const EditBlog = () => {
                 H2
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 3 }).run()
                 }
@@ -257,31 +272,6 @@ const EditBlog = () => {
               >
                 H3
               </button>
-              {/* <button
-                type="button" // Add type="button" to prevent form submission
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`p-1 ${
-                  editor.isActive("bulletList")
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
-                }`}
-              >
-                Bullet List
-              </button> */}
-              {/* <button
-                type="button" // Add type="button" to prevent form submission
-                onClick={() => editor.chain().focus().setFontSize("16px").run()}
-                className="p-1 bg-gray-200"
-              >
-                Increase Size
-              </button>
-              <button
-                type="button" // Add type="button" to prevent form submission
-                onClick={() => editor.chain().focus().setFontSize("12px").run()}
-                className="p-1 bg-gray-200"
-              >
-                Decrease Size
-              </button> */}
             </div>
             {/* Editor Content */}
             <EditorContent

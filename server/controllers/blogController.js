@@ -1,30 +1,117 @@
 import Blog from "../models/Blog.js";
 import Comment from "../models/Comment.js";
-import { v2 as cloudinary } from "cloudinary";
+// import { v2 as cloudinary } from "cloudinary";
+import { gfs } from "../configs/mongodb.js";
+import mongoose from "mongoose";
 
 /**
  * Upload image to Cloudinary
  */
+// export const uploadImage = async (req, res) => {
+//   try {
+//     console.log("🟢 Upload Image API called");
+
+//     if (!req.file) {
+//       console.error("❌ No file uploaded");
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "No file uploaded" });
+//     }
+
+//     console.log("📂 Uploading file to Cloudinary:", req.file.path);
+//     const result = await cloudinary.uploader.upload(req.file.path, {
+//       folder: "blogs",
+//     });
+
+//     console.log("✅ Image uploaded successfully:", result.secure_url);
+//     res.json({ success: true, imageUrl: result.secure_url });
+//   } catch (error) {
+//     console.error("❌ Image upload failed:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Image upload failed",
+//       error: error.message,
+//     });
+//   }
+// };
+
+/**
+ * Create a blog post
+ */
+// export const createBlog = async (req, res) => {
+//   try {
+//     const { title, content, tags, category, image, published } = req.body;
+
+//     if (!req.user) {
+//       return res.status(401).json({ error: "Unauthorized" });
+//     }
+
+//     const authorId = req.user.id; // Clerk User ID
+//     const authorName = req.user.fullName || "Unknown"; // Clerk Full Name
+
+//     const newBlog = new Blog({
+//       title,
+//       content,
+//       authorId, // Store Clerk User ID
+//       authorName, // Store Full Name
+//       tags,
+//       category,
+//       image,
+//       published,
+//     });
+
+//     await newBlog.save();
+//     res.status(201).json(newBlog);
+//   } catch (error) {
+//     console.error("❌ Error creating blog:", error);
+//     res.status(500).json({ error: "Server Error" });
+//   }
+// };
+
+// Upload image to GridFS (thumbnails bucket)
 export const uploadImage = async (req, res) => {
   try {
-    console.log("🟢 Upload Image API called");
-
-    if (!req.file) {
-      console.error("❌ No file uploaded");
-      return res
-        .status(400)
-        .json({ success: false, message: "No file uploaded" });
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({
+        success: false,
+        message: "No image uploaded",
+      });
     }
 
-    console.log("📂 Uploading file to Cloudinary:", req.file.path);
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "blogs",
-    });
+    const image = req.files.image;
+    const filename = `blog-${Date.now()}-${image.name.replace(/\s+/g, "-")}`;
 
-    console.log("✅ Image uploaded successfully:", result.secure_url);
-    res.json({ success: true, imageUrl: result.secure_url });
+    // Create a promise-based wrapper for the upload
+    const uploadFile = () => {
+      return new Promise((resolve, reject) => {
+        const uploadStream = gfs.openUploadStream(filename, {
+          contentType: image.mimetype,
+        });
+
+        uploadStream.on("finish", resolve);
+        uploadStream.on("error", reject);
+
+        // Write the file data
+        uploadStream.write(image.data);
+        uploadStream.end();
+      });
+    };
+
+    // Execute the upload
+    await uploadFile();
+
+    // Find the uploaded file to get its ID
+    const files = await gfs.find({ filename }).toArray();
+    if (!files.length) {
+      throw new Error("Failed to retrieve uploaded file");
+    }
+
+    res.json({
+      success: true,
+      imageUrl: files[0]._id.toString(),
+    });
   } catch (error) {
-    console.error("❌ Image upload failed:", error);
+    console.error("Upload error:", error);
     res.status(500).json({
       success: false,
       message: "Image upload failed",
@@ -33,9 +120,30 @@ export const uploadImage = async (req, res) => {
   }
 };
 
-/**
- * Create a blog post
- */
+// Get image from GridFS
+export const getImage = async (req, res) => {
+  try {
+    const fileId = new mongoose.Types.ObjectId(req.params.id);
+
+    const files = await gfs.find({ _id: fileId }).toArray();
+    if (!files.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Image not found",
+      });
+    }
+
+    const readStream = gfs.openDownloadStream(fileId);
+    readStream.pipe(res);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Create blog (rest remains the same)
 export const createBlog = async (req, res) => {
   try {
     const { title, content, tags, category, image, published } = req.body;
@@ -44,24 +152,20 @@ export const createBlog = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const authorId = req.user.id; // Clerk User ID
-    const authorName = req.user.fullName || "Unknown"; // Clerk Full Name
-
     const newBlog = new Blog({
       title,
       content,
-      authorId, // Store Clerk User ID
-      authorName, // Store Full Name
+      authorId: req.user.id,
+      authorName: req.user.fullName || "Unknown",
       tags,
       category,
-      image,
+      image, // This is the GridFS file ID
       published,
     });
 
     await newBlog.save();
     res.status(201).json(newBlog);
   } catch (error) {
-    console.error("❌ Error creating blog:", error);
     res.status(500).json({ error: "Server Error" });
   }
 };

@@ -46,6 +46,15 @@ const CreateBlog = ({ onClose }) => {
     content: "", // Initial content
   });
 
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   useEffect(() => {
     if (!isLoaded) {
       console.log("⌛ Waiting for Clerk to load user...");
@@ -59,27 +68,41 @@ const CreateBlog = ({ onClose }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPreview(URL.createObjectURL(file));
+      // Create a preview URL for immediate display
+      const previewUrl = URL.createObjectURL(file);
+      setPreview(previewUrl);
       setImage(file);
     }
   };
 
   const uploadImageToBackend = async () => {
     if (!image) return null;
-    const formData = new FormData();
-    formData.append("image", image);
 
     try {
       const userToken = await getToken();
-      const res = await axios.post(`${backendUrl}/api/blogs/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return res.data.imageUrl;
+      const formData = new FormData();
+      formData.append("image", image);
+
+      const response = await axios.post(
+        `${backendUrl}/api/blogs/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Upload failed");
+      }
+
+      return response.data.imageUrl;
     } catch (error) {
-      setError("Failed to upload image.");
+      console.error("Upload error:", error);
+      setError(error.response?.data?.message || "Failed to upload image");
       return null;
     }
   };
@@ -97,24 +120,24 @@ const CreateBlog = ({ onClose }) => {
 
     try {
       const userToken = await getToken();
-      let uploadedImageUrl = null;
+      let uploadedImageId = null;
+
       if (image) {
-        uploadedImageUrl = await uploadImageToBackend();
-        if (!uploadedImageUrl) {
+        uploadedImageId = await uploadImageToBackend();
+        if (!uploadedImageId) {
           setLoading(false);
           return;
         }
       }
 
-      // Get the current content from the editor
       const content = editor.getHTML();
 
       const blogData = {
         title,
-        content, // Use the HTML content from Tiptap
+        content,
         tags,
         category,
-        image: uploadedImageUrl,
+        image: uploadedImageId,
         published,
         authorId: user.id,
         authorName: user.fullName || "Unknown",
@@ -163,7 +186,7 @@ const CreateBlog = ({ onClose }) => {
           <div className="bg-white/20 rounded-lg p-2">
             <div className="flex gap-2 mb-2">
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`p-1 ${
                   editor.isActive("bold")
@@ -174,7 +197,7 @@ const CreateBlog = ({ onClose }) => {
                 Bold
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`p-1 ${
                   editor.isActive("italic")
@@ -185,7 +208,7 @@ const CreateBlog = ({ onClose }) => {
                 Italic
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 className={`p-1 ${
                   editor.isActive("underline")
@@ -196,7 +219,7 @@ const CreateBlog = ({ onClose }) => {
                 Underline
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
                 }
@@ -209,7 +232,7 @@ const CreateBlog = ({ onClose }) => {
                 H1
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 2 }).run()
                 }
@@ -222,7 +245,7 @@ const CreateBlog = ({ onClose }) => {
                 H2
               </button>
               <button
-                type="button" // Add type="button" to prevent form submission
+                type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 3 }).run()
                 }
