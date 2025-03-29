@@ -1,12 +1,33 @@
+# services:
+#   - type: web
+#     name: collab-socket-server
+#     runtime: node
+#     buildCommand: npm install
+#     startCommand: npm start
+#     env: node
+#     plan: free # Starts with free tier (upgrade later if needed)
+#     autoDeploy: true # Automatically deploys on git push
+#     healthCheckPath: /health
+#     envVars:
+#       - key: PORT
+#         value: 3001
+#       - key: FRONTEND_URL
+#         value: https://edemy-ai-integrated-smart-learning-platform.vercel.app
+#       - key: NODE_ENV
+#         value: production
+#     scaling:
+#       instances: 1 # Free tier allows only 1 instance
+#       memory: 512MB # Free tier limit
+
 services:
   - type: web
-    name: collab-socket-server
+    name: edemy-ai-integrated-smart-learning
     runtime: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node index.js
     env: node
-    plan: free # Starts with free tier (upgrade later if needed)
-    autoDeploy: true # Automatically deploys on git push
+    plan: free
+    autoDeploy: true
     healthCheckPath: /health
     envVars:
       - key: PORT
@@ -16,5 +37,5 @@ services:
       - key: NODE_ENV
         value: production
     scaling:
-      instances: 1 # Free tier allows only 1 instance
-      memory: 512MB # Free tier limit
+      instances: 1
+      memory: 512MB
