@@ -486,10 +486,20 @@ const CourseDetails = () => {
           <h1 className="font-semibold text-gray-800 course-details-heading-small md:course-details-heading-large">
             {courseData.courseTitle}
           </h1>
-          <p
+          {/* <p
             className="pt-4 md:text-base text-sm"
             dangerouslySetInnerHTML={{
               __html: courseData.courseDescription.slice(0, 200),
+            }}
+          ></p> */}
+
+          <p
+            className="pt-4 md:text-base text-sm"
+            dangerouslySetInnerHTML={{
+              __html:
+                courseData.courseDescription.length > 200
+                  ? courseData.courseDescription.slice(0, 200) + "..."
+                  : courseData.courseDescription,
             }}
           ></p>
 
