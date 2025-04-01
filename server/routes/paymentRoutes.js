@@ -13,6 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 /**
  * ✅ Create Stripe Checkout Session
  */
+const MINIMUM_PRICE_INR = 50; // ₹50 (~$0.60)
 router.post("/create-checkout-session", protectAuth, async (req, res) => {
   try {
     const { courseId } = req.body;
@@ -45,6 +46,14 @@ router.post("/create-checkout-session", protectAuth, async (req, res) => {
     // ✅ Calculate final price (handle discount)
     const discount = course.discount ? course.discount / 100 : 0;
     const finalPrice = Math.round(course.coursePrice * (1 - discount) * 100); // Convert to cents
+
+    // ✅ Enforce minimum price
+    if (finalPrice < MINIMUM_PRICE_INR * 100) {
+      return res.status(400).json({
+        success: false,
+        message: `Course price must be at least ₹${MINIMUM_PRICE_INR} (Stripe's minimum)`,
+      });
+    }
 
     // ✅ Check if user already has a pending/completed purchase
     let purchase = await Purchase.findOne({ userId, courseId });
@@ -89,14 +98,13 @@ router.post("/create-checkout-session", protectAuth, async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "inr",
             product_data: {
               name: course.courseTitle,
-              description: course.courseDescription.replace(
-                /(<([^>]+)>)/gi,
-                ""
-              ),
-              images: [course.courseThumbnail],
+              // description: course.courseDescription.replace(
+              //   /(<([^>]+)>)/gi,
+              //   ""
+              // ),
             },
             unit_amount: finalPrice, // Price in cents
           },
@@ -178,66 +186,6 @@ router.post("/confirm-payment", protectAuth, async (req, res) => {
   }
 });
 
-/**
- * ✅ Save Enrollment (Newly Added to Fix Your 404 Error)
- */
-
-// router.post("/save-enrollment", async (req, res) => {
-//   try {
-//     const { courseId, userId, amount } = req.body;
-//     console.log("📩 Received Enrollment Request:", {
-//       courseId,
-//       userId,
-//       amount,
-//     });
-
-//     if (!courseId || !userId) {
-//       return res.status(400).json({ message: "Missing courseId or userId" });
-//     }
-
-//     // ✅ Step 1: Find Existing Enrollment
-//     let purchase = await Purchase.findOne({ courseId, userId });
-
-//     console.log("🔍 Existing Purchase:", purchase);
-
-//     // ✅ Step 2: If status is "completed", reject it (user already enrolled)
-//     if (purchase && purchase.status === "completed") {
-//       console.log("⚠️ User already enrolled in this course!");
-//       return res.status(400).json({ message: "User already enrolled" });
-//     }
-
-//     // ✅ Step 3: If status is "pending", update it instead of creating a new one
-//     if (purchase && purchase.status === "pending") {
-//       console.log("🔄 Updating existing pending enrollment...");
-//       purchase.status = "completed"; // ✅ Mark as completed
-//       purchase.amount = amount; // ✅ Update amount (if needed)
-//       await purchase.save();
-//       return res
-//         .status(200)
-//         .json({ message: "Enrollment updated successfully" });
-//     }
-
-//     // ✅ Step 4: If no existing purchase, create a new enrollment
-//     purchase = new Purchase({
-//       courseId,
-//       userId,
-//       amount,
-//       status: "completed", // ✅ Ensure it's completed
-//     });
-
-//     await purchase.save();
-//     console.log("✅ Enrollment saved successfully!");
-
-//     // ✅ Step 5: Increment enrolledStudents count in Course
-//     await Course.findByIdAndUpdate(courseId, { $inc: { enrolledStudents: 1 } });
-
-//     res.status(200).json({ message: "Enrollment saved successfully" });
-//   } catch (error) {
-//     console.error("❌ Error saving enrollment:", error);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// });
-
 router.post("/save-enrollment", async (req, res) => {
   try {
     const { courseId, userId, amount } = req.body;
@@ -264,7 +212,7 @@ router.post("/save-enrollment", async (req, res) => {
     if (purchase && purchase.status === "pending") {
       console.log("🔄 Updating existing pending enrollment...");
       purchase.status = "completed";
-      purchase.amount = amount;
+      purchase.amount = amount / 100;
       await purchase.save();
     } else {
       // ✅ Create a new enrollment
