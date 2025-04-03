@@ -109,7 +109,7 @@ const BlogSection = () => {
     return <div className="text-center mt-10 text-red-500">{error}</div>;
 
   return (
-    <section className="pb-14 px-8 md:px-0">
+    <section className="pb-8 px-8 md:px-0">
       <h2 className="text-3xl font-medium text-gray-800 text-center">
         Latest Blogs
       </h2>

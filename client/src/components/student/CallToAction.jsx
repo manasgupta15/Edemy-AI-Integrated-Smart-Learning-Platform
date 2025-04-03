@@ -2,20 +2,21 @@ import { assets } from "../../assets/assets";
 
 const CallToAction = () => {
   return (
-    <div className="flex flex-col items-center gap-4 pt-10 pb-24 px-8 md:px-0">
-      <h1 className="text-xl md:text-4xl text-gray-800 font-semibold">
-        Learn anything, anytime, anywhere
+    <div className="flex flex-col items-center text-center gap-6 pt-12 pb-24 px-8 md:px-0">
+      <h1 className="text-2xl md:text-5xl font-bold text-gray-900 leading-tight">
+        Unlock Knowledge Anytime, Anywhere
       </h1>
-      <p className="text-gray-500 sm:text-sm">
-        Incididunt sint fugiat pariatur cupidatat consectetur sit cillum anim id
-        veniam aliqua proident excepteur commodo do ea.
+      <p className="text-gray-600 text-lg max-w-xl">
+        Master new skills at your own pace with expert-led courses, interactive
+        assignments, and certifications that elevate your career.
       </p>
-      <div className="flex items-center font-medium gap-6 mt-4">
-        <button className="px-10 py-3 rounded-md text-white bg-blue-600 cursor-pointer">
+      <div className="flex flex-col sm:flex-row items-center font-medium gap-6 mt-6">
+        <button className="px-10 py-3 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-all duration-300 shadow-lg">
           Get Started
         </button>
-        <button className="flex items-center gap-2 cursor-pointer">
-          Learn more <img src={assets.arrow_icon} alt="arrow_icon" />
+        <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-all duration-300">
+          Learn More{" "}
+          <img src={assets.arrow_icon} alt="arrow_icon" className="w-5" />
         </button>
       </div>
     </div>

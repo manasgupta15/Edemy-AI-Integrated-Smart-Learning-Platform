@@ -26,6 +26,7 @@
     "ace-builds": "^1.39.0",
     "axios": "^1.7.9",
     "firebase": "^11.5.0",
+    "framer-motion": "^12.6.3",
     "humanize-duration": "^3.32.1",
     "lucide-react": "^0.483.0",
     "pusher-js": "^8.4.0",
