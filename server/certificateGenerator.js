@@ -2,6 +2,17 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import mongoose from "mongoose";
+import { GridFSBucket } from "mongodb";
+
+// Get MongoDB connection
+const conn = mongoose.connection;
+let gfs, gridfsBucket;
+
+conn.once("open", () => {
+  gridfsBucket = new GridFSBucket(conn.db, { bucketName: "certificates" });
+  console.log("GridFSBucket initialized for certificates.");
+});
 
 // Derive __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -157,19 +168,46 @@ export const generateCertificate = async (userName, courseName) => {
 };
 
 // Function to save the certificate file
+// export const saveCertificate = async (pdfBytes, userId, courseId) => {
+//   const filePath = path.join(
+//     __dirname,
+//     "certificates",
+//     `${userId}_${courseId}.pdf`
+//   );
+
+//   // Ensure the "certificates" directory exists
+//   if (!fs.existsSync(path.join(__dirname, "certificates"))) {
+//     fs.mkdirSync(path.join(__dirname, "certificates"));
+//   }
+
+//   // Save the PDF file
+//   fs.writeFileSync(filePath, pdfBytes);
+//   return filePath;
+// };
+
+// Save Certificate in GridFS
 export const saveCertificate = async (pdfBytes, userId, courseId) => {
-  const filePath = path.join(
-    __dirname,
-    "certificates",
-    `${userId}_${courseId}.pdf`
-  );
+  return new Promise((resolve, reject) => {
+    try {
+      const filename = `${userId}_${courseId}.pdf`;
+      const uploadStream = gridfsBucket.openUploadStream(filename, {
+        contentType: "application/pdf",
+      });
 
-  // Ensure the "certificates" directory exists
-  if (!fs.existsSync(path.join(__dirname, "certificates"))) {
-    fs.mkdirSync(path.join(__dirname, "certificates"));
-  }
+      uploadStream.end(pdfBytes);
 
-  // Save the PDF file
-  fs.writeFileSync(filePath, pdfBytes);
-  return filePath;
+      uploadStream.on("finish", () => {
+        console.log("Certificate saved in GridFS:", filename);
+        resolve(filename);
+      });
+
+      uploadStream.on("error", (err) => {
+        console.error("Error saving certificate in GridFS:", err);
+        reject(err);
+      });
+    } catch (error) {
+      console.error("Error saving certificate in GridFS:", error);
+      reject(error);
+    }
+  });
 };

@@ -27,6 +27,7 @@ const Player = () => {
   const [progressData, setProgressData] = useState(null);
   const [initialRating, setInitialRating] = useState(0);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [certificateUrl, setCertificateUrl] = useState(""); // Store generated certificate URL
 
   // Fetch the selected course data
   const getCourseData = () => {
@@ -152,22 +153,49 @@ const Player = () => {
   };
 
   // Generate Certificate
+  // const handleGenerateCertificate = async () => {
+  //   try {
+  //     const token = await getToken();
+  //     const { data } = await axios.get(
+  //       `${backendUrl}/api/certificates/generate-certificate/${courseId}`,
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+
+  //     if (data.success) {
+  //       toast.success("Certificate generated successfully!");
+  //       window.open(data.certificateUrl, "_blank"); // Open the certificate URL in a new tab
+  //     } else {
+  //       toast.error(data.message);
+  //     }
+  //   } catch (error) {
+  //     toast.error(error.message);
+  //   }
+  // };
+
   const handleGenerateCertificate = async () => {
     try {
       const token = await getToken();
       const { data } = await axios.get(
         `${backendUrl}/api/certificates/generate-certificate/${courseId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 30000, // 30 second timeout
+        }
       );
 
       if (data.success) {
-        toast.success("Certificate generated successfully!");
-        window.open(data.certificateUrl, "_blank"); // Open the certificate URL in a new tab
+        toast.success(data.message || "Certificate generated successfully!");
+        setCertificateUrl(data.certificateUrl);
       } else {
-        toast.error(data.message);
+        toast.error(data.error || "Failed to generate certificate");
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error("Certificate error:", error);
+      toast.error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Failed to generate certificate"
+      );
     }
   };
 
@@ -242,7 +270,7 @@ const Player = () => {
           </div>
 
           {/* Certificate Button */}
-          <div className="mt-5">
+          {/* <div className="mt-5">
             <button
               onClick={handleGenerateCertificate}
               className={`px-4 py-2 text-white font-bold rounded ${
@@ -256,6 +284,35 @@ const Player = () => {
                 ? "Get Certificate"
                 : "Complete Course to Unlock Certificate"}
             </button>
+          </div> */}
+
+          <div className="mt-5 flex gap-4">
+            {/* Generate Certificate Button */}
+            <button
+              onClick={handleGenerateCertificate}
+              className={`px-4 py-2 text-white font-bold rounded ${
+                isCourseCompleted
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+              disabled={!isCourseCompleted}
+            >
+              {isCourseCompleted
+                ? "Get Certificate"
+                : "Complete Course to Unlock Certificate"}
+            </button>
+
+            {/* Download Certificate Button - Only shows if certificate is generated */}
+            {certificateUrl && (
+              <a
+                href={certificateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded"
+              >
+                Download Certificate
+              </a>
+            )}
           </div>
 
           {/* Rating Section */}
