@@ -26,6 +26,7 @@ const Player = () => {
   const [playerData, setPlayerData] = useState(null);
   const [progressData, setProgressData] = useState(null);
   const [initialRating, setInitialRating] = useState(0);
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
 
   // Fetch the selected course data
   const getCourseData = () => {
@@ -128,6 +129,14 @@ const Player = () => {
       getCourseData();
     }
   }, [enrolledCourses]);
+
+  useEffect(() => {
+    if (courseData?.courseThumbnail) {
+      setThumbnailUrl(
+        `${backendUrl}/api/educator/thumbnail/${courseData.courseThumbnail}`
+      );
+    }
+  }, [courseData, backendUrl]);
 
   const handleLectureClick = (lecture) => {
     // Ensure that the lecture URL exists and set playerData
@@ -282,7 +291,15 @@ const Player = () => {
               </div>
             </div>
           ) : (
-            <img src={courseData.courseThumbnail} alt="Course Thumbnail" />
+            // <img src={courseData.courseThumbnail} alt="Course Thumbnail" />
+            <img
+              src={thumbnailUrl || assets.placeholder_image}
+              alt={courseData.courseTitle}
+              onError={(e) => {
+                e.target.src = assets.placeholder_image;
+              }}
+              className="w-full h-full object-cover"
+            />
           )}
         </div>
       </div>
