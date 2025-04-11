@@ -76,25 +76,32 @@ router.get("/generate-certificate/:courseId", async (req, res) => {
 });
 
 // Download Certificate
+// In certificateRoutes.js
 router.get("/download/:filename", async (req, res) => {
   try {
     const { filename } = req.params;
     const conn = mongoose.connection;
     const bucket = new GridFSBucket(conn.db, { bucketName: "certificates" });
 
-    // Check if file exists
     const files = await bucket.find({ filename }).toArray();
     if (!files.length) {
       return res.status(404).json({ error: "Certificate not found" });
     }
 
-    // Set headers
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-
-    // Stream the file
+    // For Vercel - download as buffer first
     const downloadStream = bucket.openDownloadStreamByName(filename);
-    downloadStream.pipe(res);
+    const chunks = [];
+
+    downloadStream.on("data", (chunk) => chunks.push(chunk));
+    downloadStream.on("end", () => {
+      const buffer = Buffer.concat(chunks);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.send(buffer);
+    });
 
     downloadStream.on("error", () => {
       res.status(404).json({ error: "Certificate not found" });

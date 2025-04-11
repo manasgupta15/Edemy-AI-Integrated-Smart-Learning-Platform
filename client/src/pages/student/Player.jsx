@@ -199,6 +199,46 @@ const Player = () => {
     }
   };
 
+  const handleDownloadCertificate = async () => {
+    try {
+      if (!certificateUrl) {
+        toast.error("No certificate available to download");
+        return;
+      }
+
+      const token = await getToken();
+      const filename = certificateUrl.split("/").pop();
+
+      // Create a hidden anchor tag
+      const link = document.createElement("a");
+      link.href = `${backendUrl}/api/certificates/download/${filename}`;
+      link.setAttribute("download", "certificate.pdf");
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
+
+      // Add authorization header through fetch
+      const response = await fetch(link.href, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      link.href = blobUrl;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download certificate. Please try again.");
+    }
+  };
+
   const isCourseCompleted =
     courseData &&
     progressData &&
@@ -304,14 +344,12 @@ const Player = () => {
 
             {/* Download Certificate Button - Only shows if certificate is generated */}
             {certificateUrl && (
-              <a
-                href={certificateUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={handleDownloadCertificate}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded"
               >
                 Download Certificate
-              </a>
+              </button>
             )}
           </div>
 
