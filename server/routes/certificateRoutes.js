@@ -115,4 +115,25 @@ router.get("/download/:filename", async (req, res) => {
   }
 });
 
+router.get("/check-certificate/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const userId = req.auth.userId;
+
+    const certificate = await Certificate.findOne({ userId, courseId });
+
+    if (certificate) {
+      return res.status(200).json({
+        success: true,
+        certificateUrl: certificate.certificateUrl,
+      });
+    }
+
+    res.status(200).json({ success: false });
+  } catch (error) {
+    console.error("Error checking certificate:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 export default router;

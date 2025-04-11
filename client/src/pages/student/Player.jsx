@@ -139,6 +139,28 @@ const Player = () => {
     }
   }, [courseData, backendUrl]);
 
+  useEffect(() => {
+    const checkExistingCertificate = async () => {
+      try {
+        const token = await getToken();
+        const { data } = await axios.get(
+          `${backendUrl}/api/certificates/check-certificate/${courseId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (data.success && data.certificateUrl) {
+          setCertificateUrl(data.certificateUrl);
+        }
+      } catch (error) {
+        console.error("Error checking certificate:", error);
+      }
+    };
+
+    if (courseId && userData?._id) {
+      checkExistingCertificate();
+    }
+  }, [courseId, userData?._id, getToken, backendUrl]);
+
   const handleLectureClick = (lecture) => {
     // Ensure that the lecture URL exists and set playerData
     if (lecture?.lectureUrl) {
@@ -327,22 +349,24 @@ const Player = () => {
           </div> */}
 
           <div className="mt-5 flex gap-4">
-            {/* Generate Certificate Button */}
-            <button
-              onClick={handleGenerateCertificate}
-              className={`px-4 py-2 text-white font-bold rounded ${
-                isCourseCompleted
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
-              disabled={!isCourseCompleted}
-            >
-              {isCourseCompleted
-                ? "Get Certificate"
-                : "Complete Course to Unlock Certificate"}
-            </button>
+            {/* Generate Certificate Button - Only show if certificate doesn't exist */}
+            {!certificateUrl && (
+              <button
+                onClick={handleGenerateCertificate}
+                className={`px-4 py-2 text-white font-bold rounded ${
+                  isCourseCompleted
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+                disabled={!isCourseCompleted}
+              >
+                {isCourseCompleted
+                  ? "Get Certificate"
+                  : "Complete Course to Unlock Certificate"}
+              </button>
+            )}
 
-            {/* Download Certificate Button - Only shows if certificate is generated */}
+            {/* Download Certificate Button - Shows if certificate exists */}
             {certificateUrl && (
               <button
                 onClick={handleDownloadCertificate}
